@@ -1,0 +1,37 @@
+# Hot reloading dev stack: docker compose -f docker-compose.dev.yml up
+# Source is bind mounted; the anonymous volumes keep the image's node_modules from being
+# shadowed by the host's (which may hold darwin binaries that cannot run on alpine).
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run dev:api
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:5173
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/node_modules
+    ports:
+      - "${API_PORT:-3000}:3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: npm run dev --workspace @coaching-agent/web -- --host 0.0.0.0
+    environment:
+      API_PROXY_TARGET: http://api:3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - /app/apps/web/node_modules
+    ports:
+      - "${WEB_DEV_PORT:-5173}:5173"
+    depends_on:
+      - api

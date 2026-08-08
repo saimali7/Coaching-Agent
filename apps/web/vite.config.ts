@@ -8,7 +8,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL ?? 'http://localhost:3000',
+        // Server-side only: must not be VITE_ prefixed or it would leak into the client
+        // bundle and override the relative /api base URL the browser needs.
+        target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000',
         changeOrigin: true,
       },
     },

@@ -7,6 +7,17 @@ TypeScript monorepo with a React frontend and an Express API.
 
 ## Getting started
 
+The whole stack runs with one command, no Node install required:
+
+```bash
+docker compose up --build
+```
+
+Then open http://localhost:8080. nginx serves the built frontend and proxies `/api` to the
+API container, so everything is on a single origin.
+
+### Without Docker
+
 ```bash
 npm install
 npm run dev
@@ -23,6 +34,33 @@ npm run dev:api
 npm run dev:web
 ```
 
+## Docker
+
+Two stacks are provided.
+
+**Production-like** (`docker-compose.yml`) builds both apps and serves the frontend from
+nginx. This is what `docker compose up` runs.
+
+```bash
+npm run docker        # docker compose up --build
+npm run docker:down
+```
+
+**Development** (`docker-compose.dev.yml`) bind mounts the source and keeps hot reloading,
+so edits on the host restart the API and refresh the browser.
+
+```bash
+npm run docker:dev    # web on :5173, API on :3000
+npm run docker:dev:down
+```
+
+Ports are configurable if something else already occupies them:
+
+```bash
+WEB_PORT=9000 docker compose up --build
+WEB_DEV_PORT=5199 API_PORT=3001 docker compose -f docker-compose.dev.yml up --build
+```
+
 ## Scripts
 
 | Command | Description |
@@ -30,11 +68,25 @@ npm run dev:web
 | `npm run build` | Builds both apps |
 | `npm run typecheck` | Typechecks both apps |
 | `npm start` | Runs the compiled API |
+| `npm run docker` | Runs the full stack in Docker |
+| `npm run docker:dev` | Runs the hot reloading Docker stack |
 
 ## Configuration
 
-Copy `.env.example` to `.env` and adjust as needed. `PORT` and `CORS_ORIGIN` configure the
-API; `VITE_API_URL` points the web app at a non-default API origin.
+Copy `.env.example` to `.env` and adjust as needed.
+
+| Variable | Used by | Purpose |
+| --- | --- | --- |
+| `PORT` | API | Port the Express server binds to |
+| `CORS_ORIGIN` | API | Allowed browser origin |
+| `WEB_PORT` | Compose | Host port for the production stack (default 8080) |
+| `WEB_DEV_PORT`, `API_PORT` | Compose | Host ports for the dev stack |
+| `API_PROXY_TARGET` | Vite dev server | Where `/api` is proxied. Server side only |
+| `VITE_API_URL` | Client bundle | Absolute API origin. Leave empty to use `/api` |
+
+`API_PROXY_TARGET` deliberately has no `VITE_` prefix. Anything prefixed `VITE_` is inlined
+into the client bundle, so using one variable for both the proxy target and the client base
+URL would send an internal Docker hostname to the browser.
 
 ## API
 
