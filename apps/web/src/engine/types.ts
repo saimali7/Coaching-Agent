@@ -136,7 +136,9 @@ export type TelemetryType =
   | 'agent_disconnect'
   | 'agent_gate_blocked'
   | 'demo_speed_change'
-  | 'demo_state_jump';
+  | 'demo_state_jump'
+  | 'voice_changed'
+  | 'cues_regenerated';
 
 export type TelemetryEvent = {
   id: string;

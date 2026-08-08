@@ -2,6 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { Button } from '../components';
 import { useSessionStore } from '../engine/sessionStore';
 import { clock } from '../screens/format';
+import { VoicePicker } from './VoicePicker';
 import type { DemoJumpTarget, DemoSpeed } from '../engine/types';
 
 const SPEEDS: DemoSpeed[] = [1, 4, 12];
@@ -90,6 +91,8 @@ export function DemoRig() {
           Drop the strap
         </Button>
       </div>
+
+      <VoicePicker />
 
       <div className="rig-stats">
         {stats.map((r) => (

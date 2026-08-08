@@ -38,6 +38,14 @@ let active: QueueItem | null = null;
 let ducked = false;
 
 /**
+ * Bumped by the presenter rig when the cues are re-rendered in a new voice. The API
+ * serves /cues/*.mp3 with a one-hour max-age, so without this suffix the browser would
+ * keep playing the old voice and the voice swap would look silently broken.
+ * 0 means "never regenerated" — the URL stays clean.
+ */
+let cueVersion = 0;
+
+/**
  * Bumped on every playback attempt and on every stop. Async callbacks (audio events,
  * utterance events, earcon timers) compare against it and bail if they are stale, which
  * is what makes a 'critical' interrupt safe.
@@ -147,12 +155,17 @@ function emitStart(item: QueueItem, startedAt: number): void {
   }
 }
 
+function cueUrl(id: string): string {
+  const base = `/cues/${encodeURIComponent(id)}.mp3`;
+  return cueVersion > 0 ? `${base}?v=${cueVersion}` : base;
+}
+
 function getAudioElement(id: string): HTMLAudioElement | null {
   const cached = audioCache.get(id);
   if (cached) return cached;
   if (!canCreateAudio()) return null;
   try {
-    const el = new Audio(`/cues/${encodeURIComponent(id)}.mp3`);
+    const el = new Audio(cueUrl(id));
     el.preload = 'auto';
     el.volume = cueVolume();
     audioCache.set(id, el);
@@ -404,6 +417,8 @@ export const cueEngine: CueEngine & {
   primeAudio(ids: string[]): Promise<void>;
   isPlaying(): boolean;
   setOnCueStart(fn: CueStartHandler | null): void;
+  /** Point playback at a newly rendered set of cue mp3s. 0 = no version suffix. */
+  setCueVersion(version: number): void;
 } = {
   onCueStart: undefined,
 
@@ -499,5 +514,16 @@ export const cueEngine: CueEngine & {
 
   setOnCueStart(fn: CueStartHandler | null): void {
     cueEngine.onCueStart = fn ?? undefined;
+  },
+
+  setCueVersion(version: number): void {
+    const next = Number.isFinite(version) && version > 0 ? Math.floor(version) : 0;
+    if (next === cueVersion) return;
+    cueVersion = next;
+    // Every cached element holds the previous URL, and every id in missingCues was
+    // written off against the previous render. Both have to go or the next play()
+    // either reuses the old voice or skips straight to speech synthesis.
+    audioCache.clear();
+    missingCues.clear();
   },
 };

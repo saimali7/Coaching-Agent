@@ -7,6 +7,7 @@ import { routeTree } from './routeTree.gen';
 import { cueEngine } from './audio/cueEngine';
 import { setCueSink, useSessionStore } from './engine/sessionStore';
 import { startTelemetryFlusher } from './engine/telemetry';
+import { cueStatus } from './lib/voiceApi';
 import './styles.css';
 
 const queryClient = new QueryClient({
@@ -33,6 +34,14 @@ cueEngine.setOnCueStart((id, requestedAt, startedAt) => {
   useSessionStore.getState().track('cue_latency', { id, ms: Math.round(startedAt - requestedAt) });
 });
 startTelemetryFlusher();
+
+// If the cues were re-rendered in another voice on a previous run, the files on disk are
+// behind a one-hour cache — pick up the version so we fetch the current ones. Silent on
+// failure by design: with no API key there is no voice endpoint, and the app still runs
+// on speech synthesis.
+void cueStatus()
+  .then((status) => cueEngine.setCueVersion(status.version))
+  .catch(() => undefined);
 
 function Instrumentation() {
   // "Screen unlocks per session" is a headline metric — it needs an event to fire against.

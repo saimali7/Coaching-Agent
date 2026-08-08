@@ -1025,6 +1025,125 @@
 }
 
 /* --------------------------------------------------------------------------
+   Demo rig — voice picker. Swaps the coach's voice on both surfaces at once
+   (agent + the pre-rendered cues). Same register as the rest of the rig:
+   hairlines, pill controls, no chrome the browser gave us for free.
+   -------------------------------------------------------------------------- */
+.rig-voice-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  margin: 0;
+  padding: 9px 30px 9px var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+  /* Chevron drawn inline so the control needs no extra element. */
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-300) 50%),
+    linear-gradient(135deg, var(--ink-300) 50%, transparent 50%);
+  background-position:
+    right 15px center,
+    right 10px center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.rig-voice-select:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.rig-voice-select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rig-voice-select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* The popup itself is OS-drawn; this is the most we can do to keep it in register. */
+.rig-voice-select option {
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+}
+
+.rig-voice-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+  color: var(--ink-500);
+}
+
+.rig-voice-status-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--weight-bold);
+  color: var(--ink-200);
+}
+
+.rig-voice-note,
+.rig-voice-progress,
+.rig-voice-warn,
+.rig-voice-ok,
+.rig-voice-error {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--size-label);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.rig-voice-note {
+  color: var(--text-tertiary);
+}
+
+/* 20–30s of sequential TTS. Say what is happening rather than freeze. */
+.rig-voice-progress {
+  color: var(--text-secondary);
+}
+
+.rig-voice-warn {
+  color: var(--state-caution);
+}
+
+.rig-voice-ok {
+  color: var(--state-good);
+}
+
+.rig-voice-error {
+  color: var(--state-poor);
+}
+
+.rig-voice-hint {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--size-label-sm);
+  color: var(--text-tertiary);
+}
+
+/* --------------------------------------------------------------------------
    Unframed viewport. Below the stage breakpoint the phone is the whole page,
    so the rig goes away and the screens respect the home indicator.
    -------------------------------------------------------------------------- */
@@ -1038,4 +1157,70 @@
   .log {
     padding-bottom: max(30px, env(safe-area-inset-bottom));
   }
+}
+
+/* --------------------------------------------------------------------------
+   Demo rig — paste-a-voice-id escape hatch. A library voice is invisible to
+   the API until it has been added to the account, so the list above cannot be
+   the only way in.
+   -------------------------------------------------------------------------- */
+.rig-voice-manual {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.rig-voice-manual-label {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+
+.rig-voice-manual-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.rig-voice-input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 8px var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: var(--font-numeric);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.rig-voice-input::placeholder {
+  color: var(--ink-600);
+}
+
+.rig-voice-input:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.rig-voice-input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-color: var(--border-accent);
+}
+
+.rig-voice-input:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
 }

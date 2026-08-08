@@ -17,7 +17,8 @@ export interface ButtonProps {
   disabled?: boolean;
   onClick?: () => void;
   children: ReactNode;
-  type?: 'button';
+  /** 'submit' so a Button can close a form and keep the Enter key working. */
+  type?: 'button' | 'submit';
 }
 
 export function Button({
