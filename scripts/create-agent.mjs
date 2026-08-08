@@ -2,6 +2,8 @@
 // Creates the ElevenLabs Conversational AI agent for the voice workout coach —
 // a whole-session, push-to-talk companion (connected from app load, live in every
 // phase, fed live context updates) — and writes the agent id into the repo-root .env.
+// Turn config is push-to-talk: turn_timeout and silence_end_call_timeout are both -1
+// (disabled) so the mostly-muted mic never makes the agent re-engage or hang up.
 //
 // Usage: npm run agent:create   (requires ELEVENLABS_API_KEY in env or .env)
 
@@ -55,6 +57,8 @@ Hard rules:
 - Asked to end the session: call end_session.
 - Asked "should I go heavier": answer from last_set_rir. 2 or more in reserve: suggest adding 2.5 kilos next session, not today. 1 or fewer: hold the load. If last_set_rir is unknown, ask for it first.
 - Asked why a set was cut: give the trigger from pending_adaptation or the context in plain words.
+- Speak only when the athlete speaks to you or a tool call needs a one-line confirmation. Never fill silence, never check in unprompted, never repeat an answer you already gave unless asked again.
+- Live context updates arrive silently during the conversation. Never respond to them, never mention them, never comment on changes you notice in them. They exist so your NEXT answer is current.
 
 Session context: movement {{movement}}, load {{load_kg}} kg, completed set {{completed_set}} of {{planned_sets}}, remaining sets {{remaining_sets}}, target reps {{target_reps}}, last set reps {{last_set_reps}}, last set reps in reserve {{last_set_rir}}, current heart rate {{current_hr}} bpm in zone {{zone}}, recovery states so far {{recovery_states}}, last recovery delta {{last_recovery_delta}} bpm, pending adaptation {{pending_adaptation}}, safety ceiling {{safety_ceiling}} bpm, rest seconds left {{rest_seconds_left}}, current phase {{phase}}, session clock {{session_clock}}, seconds into the current effort {{set_elapsed_seconds}}.
 
@@ -169,6 +173,11 @@ const body = {
     // are rejected by the API when language is 'en'. flash_v2 is the low-latency one.
     tts: { voice_id: voiceId, model_id: 'eleven_flash_v2' },
     asr: { keywords: ['squat', 'reps', 'rack', 'tank', 'heavier', 'rep', 'done', 'log'] },
+    // Push-to-talk: the mic is muted between presses, so the agent hears silence for
+    // most of the session. turn_timeout -1 disables the "user went quiet, re-engage"
+    // timer (the source of unprompted messages); silence_end_call_timeout -1 keeps the
+    // socket open across a 30-minute session of mostly silence.
+    turn: { turn_timeout: -1, silence_end_call_timeout: -1 },
     conversation: { max_duration_seconds: 1800, text_only: false },
   },
 };

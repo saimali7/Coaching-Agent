@@ -14,7 +14,7 @@ import { useSessionStore } from '../engine/sessionStore';
 import { SAFETY_CEILING_BPM } from '../engine/programme';
 import { cueEngine } from '../audio/cueEngine';
 import { CUE_IDS } from '../audio/cueScript';
-import { useCoachAgent } from '../voice/useCoachAgent';
+import { useCoachAgentContext } from '../voice/CoachAgentProvider';
 import { useWakeLock } from '../lib/useWakeLock';
 import { clock, deltaText, zoneLabel, zoneTone } from './format';
 
@@ -22,7 +22,7 @@ import { clock, deltaText, zoneLabel, zoneTone } from './format';
 export function LiveSession() {
   const navigate = useNavigate();
   const s = useSessionStore();
-  const agent = useCoachAgent();
+  const agent = useCoachAgentContext();
 
   const {
     phase,
@@ -154,7 +154,13 @@ export function LiveSession() {
         )}
       </div>
 
-      <CaptionCard text={caption} active={orbState === 'speaking'} />
+      {/* The agent's answer owns the card outright while it is set — engine copy
+          returns only after the voice layer clears the line. While the answer is
+          up, the waveform tracks the agent actually speaking, not the orb. */}
+      <CaptionCard
+        text={caption}
+        active={agent.agentLine !== null ? agent.talkState === 'speaking' : orbState === 'speaking'}
+      />
 
       <div className="ls-deltas">
         {[0, 1, 2].map((i) => {
@@ -192,7 +198,14 @@ export function LiveSession() {
               <Icon name="lock" size={14} /> Mic opens in the rest window
             </div>
           )}
-          <button className="ls-tap" onClick={s.logRep} type="button">
+          <button
+            className="ls-tap"
+            onClick={s.logRep}
+            // A pad that keeps focus turns the next Space press into a phantom
+            // rep. Blur on release so Space always belongs to the mic.
+            onPointerUp={(e) => e.currentTarget.blur()}
+            type="button"
+          >
             <span className="ls-tap-title">Tap to log a rep</span>
             <span className="ls-tap-sub">the coach counts your last three out loud</span>
           </button>
@@ -203,14 +216,17 @@ export function LiveSession() {
         <div className="ls-rest-actions">
           <PushToTalk agent={agent} />
           <div className="ls-rest-copy">
+            {/* Priority: unavailable > connecting > holding > speaking > idle. */}
             <div className="ls-rest-title">
               {agent.talkState === 'unavailable'
                 ? 'Coach offline'
-                : agent.holding
-                  ? 'Listening'
-                  : agent.talkState === 'speaking'
-                    ? 'Coach replying'
-                    : 'Hold to talk'}
+                : agent.talkState === 'connecting'
+                  ? 'Connecting…'
+                  : agent.holding
+                    ? 'Listening'
+                    : agent.talkState === 'speaking'
+                      ? 'Coach replying'
+                      : 'Hold to talk'}
             </div>
             <div className="ls-rest-sub">
               {agent.talkState === 'unavailable'
@@ -279,6 +295,9 @@ export function LiveSession() {
           className="ls-mute"
           type="button"
           onClick={s.toggleMute}
+          // The chip stays mounted across phases, so a focused chip would turn
+          // the next Space hold into a phantom mute toggle. Blur on release.
+          onPointerUp={(e) => e.currentTarget.blur()}
           aria-label={muted ? 'Unmute coach' : 'Mute coach'}
         >
           <Icon name={muted ? 'circle-alert' : 'zap'} size={14} />
@@ -309,16 +328,32 @@ export function LiveSession() {
             </Button>
             {agent.canTalk && (
               // The sheet covers the screen, so the mic has to be reachable from
-              // inside it — arguing with the decision is the point (#38).
-              <Button
-                variant="ghost"
-                size="md"
-                block
-                icon="message-circle"
-                onClick={agent.connected ? agent.stopTalk : agent.startTalk}
+              // inside it — arguing with the decision is the point (#38). Same
+              // hold gesture as everywhere else; Space still works via the rest
+              // button's listener underneath the scrim.
+              <button
+                type="button"
+                className={`cad-btn cad-btn--ghost cad-btn--md cad-btn--block${
+                  agent.holding ? ' is-holding' : ''
+                }`}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!agent.holding) void agent.holdStart();
+                }}
+                onPointerUp={(e) => {
+                  agent.holdEnd();
+                  e.currentTarget.blur();
+                }}
+                onPointerCancel={() => agent.holdEnd()}
+                aria-pressed={agent.holding}
+                aria-label={agent.holding ? 'Release to send' : 'Hold to talk it through'}
               >
-                {agent.connected ? 'Stop talking' : 'Talk it through'}
-              </Button>
+                <Icon name="message-circle" size={16} className="cad-btn__icon" />
+                <span className="cad-btn__label">
+                  {agent.holding ? 'Listening…' : 'Hold to talk it through'}
+                </span>
+              </button>
             )}
           </>
         }
@@ -327,7 +362,7 @@ export function LiveSession() {
   );
 }
 
-type Agent = ReturnType<typeof useCoachAgent>;
+type Agent = ReturnType<typeof useCoachAgentContext>;
 
 /**
  * Hold to speak, release to send. A press-and-hold is the honest gesture here:
@@ -337,23 +372,37 @@ type Agent = ReturnType<typeof useCoachAgent>;
 function PushToTalk({ agent, compact = false }: { agent: Agent; compact?: boolean }) {
   const { canTalk, holding, holdStart, holdEnd, talkState } = agent;
 
-  // Space and Enter hold too, so the control is not mouse-only. Key repeat
-  // fires held keydown events, hence the `holding` guard.
+  // Space holds too, so the control is not mouse-only. Enter is deliberately
+  // not a hold key — it is too entangled with button and form activation to
+  // borrow safely. Key repeat fires held keydown events, hence `e.repeat`.
   useEffect(() => {
     if (!canTalk) return;
-    const isHoldKey = (e: KeyboardEvent) => e.code === 'Space' || e.code === 'Enter';
-    const target = (e: KeyboardEvent) => e.target as HTMLElement | null;
-    const typing = (e: KeyboardEvent) => {
-      const t = target(e);
-      return t !== null && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    const isHoldKey = (e: KeyboardEvent) => e.code === 'Space';
+    // Space on a focused control activates the control — checking only the
+    // event target misses this, because activation follows the focused
+    // element. Leave the key to whatever owns focus.
+    const controlHasFocus = () => {
+      const el = document.activeElement as HTMLElement | null;
+      if (el === null) return false;
+      const tag = el.tagName;
+      return (
+        tag === 'BUTTON' ||
+        tag === 'SELECT' ||
+        tag === 'A' ||
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        el.isContentEditable
+      );
     };
     const down = (e: KeyboardEvent) => {
-      if (!isHoldKey(e) || e.repeat || typing(e)) return;
+      if (!isHoldKey(e) || e.repeat || holding || controlHasFocus()) return;
       e.preventDefault();
       void holdStart();
     };
     const up = (e: KeyboardEvent) => {
-      if (!isHoldKey(e) || typing(e)) return;
+      // Only a hold this listener opened gets closed here; when nothing is
+      // held, Space belongs to the focused control, untouched.
+      if (!isHoldKey(e) || !holding) return;
       e.preventDefault();
       holdEnd();
     };
@@ -363,7 +412,7 @@ function PushToTalk({ agent, compact = false }: { agent: Agent; compact?: boolea
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, [canTalk, holdStart, holdEnd]);
+  }, [canTalk, holding, holdStart, holdEnd]);
 
   // A pointer released outside the button, or a lost window focus, must still
   // close the mic — otherwise it stays open with nobody watching.
@@ -382,15 +431,39 @@ function PushToTalk({ agent, compact = false }: { agent: Agent; compact?: boolea
 
   // Disabled reads as unavailable but the button never unmounts — the talkbar
   // must not jump when the rig restores the rest-only gate.
-  const state = !canTalk ? 'unavailable' : holding ? 'holding' : talkState;
+  // State priority is explicit: unavailable > connecting > holding > speaking
+  // > idle. While connecting during a hold the label side says 'Connecting…'
+  // but the button stays visually held (`is-holding` rides along).
+  const state =
+    !canTalk || talkState === 'unavailable'
+      ? 'unavailable'
+      : talkState === 'connecting'
+        ? 'connecting'
+        : holding
+          ? 'holding'
+          : talkState === 'speaking'
+            ? 'speaking'
+            : 'idle';
+  const heldWhileConnecting = state === 'connecting' && holding;
 
   return (
     <button
-      className={`ls-talk is-${state}${compact ? ' is-compact' : ''}`}
+      className={`ls-talk is-${state}${heldWhileConnecting ? ' is-holding' : ''}${
+        compact ? ' is-compact' : ''
+      }`}
       onPointerDown={(e) => {
         e.preventDefault();
+        // The window-level eager-connect listener (and anything else on the
+        // window) must not also see this press — the button owns it.
+        e.stopPropagation();
+        if (holding) return;
         void holdStart();
       }}
+      // Focus left on the button would make the next Space press re-activate
+      // it instead of opening the mic. Release always blurs; holdEnd itself
+      // arrives via the window-level pointerup listener.
+      onPointerUp={(e) => e.currentTarget.blur()}
+      onPointerCancel={(e) => e.currentTarget.blur()}
       disabled={!canTalk}
       type="button"
       aria-pressed={holding}

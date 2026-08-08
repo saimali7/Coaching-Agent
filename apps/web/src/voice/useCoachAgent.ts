@@ -9,21 +9,48 @@ import { toDynamicVariables, toContextualUpdate, toLiveUpdate } from './context'
 export type TalkState = 'unavailable' | 'idle' | 'connecting' | 'listening' | 'speaking';
 
 // The always-live companion. The socket comes up on the first user gesture and
-// stays up for the whole session: push to talk in every phase, a continuous
-// context stream (event-driven + heartbeat), auto-reconnect with backoff, and
-// voice performance logging. When the rig flips `micAlwaysOn` off, the old
-// rest-only product rules (#31–#34, #39) bind again: hard gate outside REST,
-// rest-exit endSession, gate-blocked telemetry.
+// stays up for the whole session: push to talk in every phase, event-driven
+// context updates (plus a fresh snapshot on every hold), auto-reconnect with
+// backoff, and voice performance logging. When the rig flips `micAlwaysOn`
+// off, the old rest-only product rules (#31–#34, #39) bind again: hard gate
+// outside REST, rest-exit endSession, gate-blocked telemetry.
+//
+// This hook is mounted ONCE, by CoachAgentProvider at the root route, so the
+// conversation, its client tools and its timers survive screen navigation.
+// Screens consume it via useCoachAgentContext().
 
 /** Debounce for event-driven live updates so bursts coalesce into one send. */
 const LIVE_DEBOUNCE_MS = 300;
-/** Heartbeat cadence while connected in 'set' or 'rest'. */
-const HEARTBEAT_MS = 5_000;
-/** Heartbeat is skipped when HR moved less than this and phase/reps held. */
-const HEARTBEAT_HR_DELTA = 3;
 /** Reconnect backoff: 2 s doubling to a 30 s cap, reset on successful connect. */
 const RECONNECT_BASE_MS = 2_000;
 const RECONNECT_MAX_MS = 30_000;
+/** Mic stays open this long after release so the last word is not clipped. */
+const RELEASE_TAIL_MS = 350;
+/** A caption is cleared this long after the agent stops speaking. */
+const CAPTION_LINGER_MS = 20_000;
+/** Safety valve: an in-flight connect that never settles is abandoned. */
+const CONNECT_TIMEOUT_MS = 15_000;
+
+// ---------------------------------------------------------------------------
+// Single-flight connection gate (bug: connect race double-starting sessions).
+//
+// `connect()` is async: the eager pointerdown listener and holdStart can fire
+// from the SAME tap (pointerdown on the talk button bubbles to window). React
+// state does not update synchronously, so a state guard cannot stop the second
+// caller. This module-level promise is set synchronously before any await —
+// every concurrent caller awaits the SAME connection attempt, and the promise
+// settles from onConnect (true) or onDisconnect/onError/start failure (false).
+// ---------------------------------------------------------------------------
+
+let inFlight: Promise<boolean> | null = null;
+let inFlightResolve: ((ok: boolean) => void) | null = null;
+
+function settleInFlight(ok: boolean): void {
+  const resolve = inFlightResolve;
+  inFlight = null;
+  inFlightResolve = null;
+  resolve?.(ok);
+}
 
 /** Seconds into the current working set; 0 outside one. */
 function setElapsedSec(s: SessionState): number {
@@ -31,6 +58,11 @@ function setElapsedSec(s: SessionState): number {
   const current = s.sets.at(-1);
   if (!current) return 0;
   return Math.max(0, Math.round((s.sessionClock - current.startedAt) / 1000));
+}
+
+/** The session is over; no connection should be made or resurrected. */
+function sessionFinished(s: SessionState): boolean {
+  return s.phase === 'complete' || s.phase === 'aborted';
 }
 
 export function useCoachAgent() {
@@ -56,7 +88,6 @@ export function useCoachAgent() {
   const configured = voiceStatus.data?.configured ?? false;
 
   // Refs so callbacks and timers always see current truth without re-binding.
-  const connectingRef = useRef(false);
   const configuredRef = useRef(configured);
   configuredRef.current = configured;
   const everConnectedRef = useRef(false);
@@ -64,8 +95,12 @@ export function useCoachAgent() {
   const backoffRef = useRef(RECONNECT_BASE_MS);
   const attemptRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Signature of the last live send, so idle heartbeats are skipped. */
-  const lastSentRef = useRef<{ phase: string; reps: number; hr: number } | null>(null);
+  /** Mirrors `holding` synchronously — timers and awaits must not read stale state. */
+  const holdingRef = useRef(false);
+  /** Pending delayed mute after holdEnd; non-null means the release tail is active. */
+  const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Pending caption expiry after the agent stops speaking. */
+  const captionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearReconnectTimer = useCallback(() => {
     if (reconnectTimerRef.current !== null) {
@@ -74,35 +109,50 @@ export function useCoachAgent() {
     }
   }, []);
 
+  const clearReleaseTimer = useCallback(() => {
+    if (releaseTimerRef.current !== null) {
+      clearTimeout(releaseTimerRef.current);
+      releaseTimerRef.current = null;
+    }
+  }, []);
+
   const conversation = useConversation({
     onConnect: () => {
       setConnecting(false);
-      connectingRef.current = false;
       everConnectedRef.current = true;
       backoffRef.current = RECONNECT_BASE_MS;
       attemptRef.current = 0;
       clearReconnectTimer();
       useSessionStore.getState().track('agent_connect');
+      // Connect-time enforcement: the SDK resets mute to open on every new
+      // conversation, so a fresh session must be re-muted unless a hold is
+      // active right now (mic state is owned by applyMicState alone).
+      applyMicState();
+      settleInFlight(true);
     },
     onDisconnect: () => {
       setConnecting(false);
-      connectingRef.current = false;
+      clearReleaseTimer();
+      holdingRef.current = false;
+      setHolding(false);
       const s = useSessionStore.getState();
       s.setAgentActive(false);
       s.track('agent_disconnect');
       cueEngine.setDucked(false);
       setAgentLine(null);
+      settleInFlight(false);
       maybeScheduleReconnect();
     },
     onError: (message) => {
       // Socket-drop fallback (#39): Tier 0 keeps running, the agent goes quiet —
       // and, in always-live mode, quietly tries to come back.
       setConnecting(false);
-      connectingRef.current = false;
+      clearReleaseTimer();
       const s = useSessionStore.getState();
       s.setAgentActive(false);
       s.track('agent_disconnect', { error: message });
       cueEngine.setDucked(false);
+      settleInFlight(false);
       maybeScheduleReconnect();
     },
     onMessage: ({ message, source }) => {
@@ -149,46 +199,82 @@ export function useCoachAgent() {
   const conversationRef = useRef(conversation);
   conversationRef.current = conversation;
 
-  /** Open the socket if needed. The mic starts muted — holding is what opens it. */
-  const connect = useCallback(async (): Promise<boolean> => {
+  // The single owner of microphone state. Desired mute is computed from the
+  // hold and the release tail — nothing else may call setMuted, so nothing
+  // can fight the SDK or re-assert mute mid-hold / unmute mid-release.
+  const applyMicState = useCallback(() => {
     const c = conversationRef.current;
-    if (c.status === 'connected') return true;
-    if (connectingRef.current) return false;
-    manualStopRef.current = false;
-    connectingRef.current = true;
-    setConnecting(true);
+    if (c.status !== 'connected') return;
+    const desiredMuted = !(holdingRef.current || releaseTimerRef.current !== null);
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      const res = await fetch('/api/voice/signed-url');
-      if (!res.ok) throw new Error('signed url unavailable');
-      const { signedUrl } = (await res.json()) as { signedUrl: string };
-      const st = useSessionStore.getState();
-      conversationRef.current.startSession({
-        signedUrl,
-        connectionType: 'websocket',
-        dynamicVariables: toDynamicVariables(buildCoachContext(st), {
-          sessionClockMs: st.sessionClock,
-          setElapsedSeconds: setElapsedSec(st),
-        }),
-      });
-      return true;
+      c.setMuted(desiredMuted);
     } catch {
-      setConnecting(false);
-      connectingRef.current = false;
-      useSessionStore.getState().track('agent_disconnect', { error: 'start_failed' });
-      return false;
+      // The conversation raced away between the status check and the call.
     }
+  }, []);
+
+  /**
+   * Open the socket if needed. Single-flight: the in-flight promise is set
+   * synchronously before any await, so concurrent callers (eager pointerdown +
+   * holdStart from the same tap, the reconnect timer) share ONE attempt and
+   * ONE conversation. Resolves true only once the session is actually
+   * connected. The mic starts muted — holding is what opens it.
+   */
+  const connect = useCallback((): Promise<boolean> => {
+    if (conversationRef.current.status === 'connected') return Promise.resolve(true);
+    if (inFlight) return inFlight;
+
+    inFlight = new Promise<boolean>((resolve) => {
+      const watchdog = setTimeout(() => settleInFlight(false), CONNECT_TIMEOUT_MS);
+      inFlightResolve = (ok) => {
+        clearTimeout(watchdog);
+        resolve(ok);
+      };
+    });
+    const flight = inFlight;
+
+    manualStopRef.current = false;
+    setConnecting(true);
+
+    void (async () => {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const res = await fetch('/api/voice/signed-url');
+        if (!res.ok) throw new Error('signed url unavailable');
+        const { signedUrl } = (await res.json()) as { signedUrl: string };
+        const st = useSessionStore.getState();
+        conversationRef.current.startSession({
+          signedUrl,
+          connectionType: 'websocket',
+          dynamicVariables: toDynamicVariables(buildCoachContext(st), {
+            sessionClockMs: st.sessionClock,
+            setElapsedSeconds: setElapsedSec(st),
+          }),
+        });
+        // startSession is fire-and-forget; the flight settles from onConnect
+        // (true) or onDisconnect/onError (false).
+      } catch {
+        setConnecting(false);
+        useSessionStore.getState().track('agent_disconnect', { error: 'start_failed' });
+        settleInFlight(false);
+      }
+    })();
+
+    return flight;
   }, []);
 
   /**
    * Auto-reconnect (always-live only). Backoff doubles from 2 s to a 30 s cap
    * and resets on a successful connect. Never loops when unconfigured: it arms
    * only after a successful connect or a positive /api/voice/status. A manual
-   * stopTalk() marks the disconnect as intentional and suppresses it.
+   * stopTalk() marks the disconnect as intentional and suppresses it. A
+   * finished session (complete/aborted) is never resurrected.
    */
   const maybeScheduleReconnect = useCallback(() => {
     if (manualStopRef.current) return;
-    if (!useSessionStore.getState().micAlwaysOn) return;
+    const store = useSessionStore.getState();
+    if (sessionFinished(store)) return;
+    if (!store.micAlwaysOn) return;
     if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
     if (!everConnectedRef.current && !configuredRef.current) return;
     if (reconnectTimerRef.current !== null) return;
@@ -198,7 +284,9 @@ export function useCoachAgent() {
     reconnectTimerRef.current = setTimeout(() => {
       reconnectTimerRef.current = null;
       const s = useSessionStore.getState();
-      // The rig may have restored rest-only mode while the timer was pending.
+      // The session may have finished, or the rig may have restored rest-only
+      // mode, while the timer was pending.
+      if (sessionFinished(s)) return;
       if (!s.micAlwaysOn && s.phase !== 'rest') return;
       attemptRef.current += 1;
       s.track('agent_reconnect', { attempt: attemptRef.current });
@@ -210,13 +298,16 @@ export function useCoachAgent() {
 
   // Eager connection: browsers require a user gesture before getUserMedia, so
   // the first pointerdown anywhere brings the socket up (mic muted). A failed
-  // attempt re-arms on the next gesture.
+  // attempt re-arms on the next gesture. Never fires for a finished session —
+  // the listener stays armed for the next one instead.
   useEffect(() => {
     if (!configured) return;
     let disposed = false;
     const onPointerDown = () => {
+      const s = useSessionStore.getState();
+      if (sessionFinished(s)) return;
+      if (conversationRef.current.status === 'connected') return;
       window.removeEventListener('pointerdown', onPointerDown);
-      if (conversationRef.current.status === 'connected' || connectingRef.current) return;
       void connect().then((ok) => {
         if (!ok && !disposed && conversationRef.current.status !== 'connected') {
           window.addEventListener('pointerdown', onPointerDown);
@@ -258,23 +349,21 @@ export function useCoachAgent() {
     if (phase !== 'rest' && (c.status === 'connected' || connecting)) {
       manualStopRef.current = true;
       clearReconnectTimer();
+      clearReleaseTimer();
       c.endSession();
       setConnecting(false);
+      settleInFlight(false);
+      holdingRef.current = false;
       setHolding(false);
       useSessionStore.getState().track('agent_gate_blocked', { phase });
     }
-  }, [phase, connecting, micAlwaysOn, clearReconnectTimer]);
+  }, [phase, connecting, micAlwaysOn, clearReconnectTimer, clearReleaseTimer]);
 
-  /** Send one compact live line; also records the signature heartbeats compare against. */
+  /** Send one compact live line built from the store's current truth. */
   const sendLiveUpdate = useCallback(() => {
     const c = conversationRef.current;
     if (c.status !== 'connected') return;
     const s = useSessionStore.getState();
-    lastSentRef.current = {
-      phase: s.phase,
-      reps: s.sets.at(-1)?.repsCompleted ?? 0,
-      hr: s.hr.current,
-    };
     c.sendContextualUpdate(
       toLiveUpdate(buildCoachContext(s), {
         sessionClockMs: s.sessionClock,
@@ -283,30 +372,23 @@ export function useCoachAgent() {
     );
   }, []);
 
-  // Live context stream, event-driven: phase, set number, reps, adaptation
-  // presence, last RIR. Debounced so a burst (rep + set end + rest entry)
-  // coalesces into a single update.
+  // Live context, event-driven and deliberately sparse: phase changes, the
+  // pending adaptation appearing or resolving, and session complete/abort
+  // (both are phase changes). NOT individual reps, NOT HR drift, NOT rest
+  // countdown ticks — flooding the history with those made the agent comment
+  // on stale numbers unprompted. The holdStart snapshot covers freshness at
+  // the only moment it matters: right before the user asks something.
+  // Debounced so a burst (set end + rest entry) coalesces into one send.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const signature = (s: SessionState) => ({
       phase: s.phase,
-      currentSet: s.currentSet,
-      reps: s.sets.at(-1)?.repsCompleted ?? 0,
       pending: s.pendingAdaptation !== null,
-      rir: s.sets.at(-1)?.rir ?? null,
     });
     let prev = signature(useSessionStore.getState());
     const unsubscribe = useSessionStore.subscribe((state) => {
       const next = signature(state);
-      if (
-        next.phase === prev.phase &&
-        next.currentSet === prev.currentSet &&
-        next.reps === prev.reps &&
-        next.pending === prev.pending &&
-        next.rir === prev.rir
-      ) {
-        return;
-      }
+      if (next.phase === prev.phase && next.pending === prev.pending) return;
       prev = next;
       if (timer !== null) clearTimeout(timer);
       timer = setTimeout(() => {
@@ -320,29 +402,6 @@ export function useCoachAgent() {
     };
   }, [sendLiveUpdate]);
 
-  // Heartbeat: every ~5 s while connected in 'set' or 'rest', carrying HR,
-  // rest seconds left / set elapsed and the session clock — skipped when
-  // nothing meaningful moved since the last send (HR within ±3 bpm, same
-  // phase and reps) so the agent is not spammed.
-  useEffect(() => {
-    if (conversation.status !== 'connected') return;
-    const id = setInterval(() => {
-      const s = useSessionStore.getState();
-      if (s.phase !== 'set' && s.phase !== 'rest') return;
-      const last = lastSentRef.current;
-      if (
-        last &&
-        last.phase === s.phase &&
-        last.reps === (s.sets.at(-1)?.repsCompleted ?? 0) &&
-        Math.abs(last.hr - s.hr.current) <= HEARTBEAT_HR_DELTA
-      ) {
-        return;
-      }
-      sendLiveUpdate();
-    }, HEARTBEAT_MS);
-    return () => clearInterval(id);
-  }, [conversation.status, sendLiveUpdate]);
-
   // Ducking follows speech, not connection: an always-live socket must not
   // permanently duck Tier-0 cues. The orb mirrors the same signal.
   useEffect(() => {
@@ -350,6 +409,34 @@ export function useCoachAgent() {
     cueEngine.setDucked(speaking);
     useSessionStore.getState().setAgentActive(speaking);
   }, [conversation.status, conversation.isSpeaking]);
+
+  // Caption lifetime: a line lingers 20 s after the agent stops speaking, then
+  // clears. A new message (agentLine changes) or resumed speech resets the
+  // timer. Without this, an old answer sits on screen across phases and looks
+  // like the agent said it again.
+  useEffect(() => {
+    if (captionTimerRef.current !== null) {
+      clearTimeout(captionTimerRef.current);
+      captionTimerRef.current = null;
+    }
+    if (agentLine === null) return;
+    if (conversation.status === 'connected' && conversation.isSpeaking) return;
+    captionTimerRef.current = setTimeout(() => {
+      captionTimerRef.current = null;
+      setAgentLine(null);
+    }, CAPTION_LINGER_MS);
+    return () => {
+      if (captionTimerRef.current !== null) {
+        clearTimeout(captionTimerRef.current);
+        captionTimerRef.current = null;
+      }
+    };
+  }, [agentLine, conversation.status, conversation.isSpeaking]);
+
+  // A finished session shows no ghost caption on the summary.
+  useEffect(() => {
+    if (phase === 'complete' || phase === 'aborted') setAgentLine(null);
+  }, [phase]);
 
   const startTalk = useCallback(async () => {
     const s = useSessionStore.getState();
@@ -363,11 +450,13 @@ export function useCoachAgent() {
   const stopTalk = useCallback(() => {
     manualStopRef.current = true;
     clearReconnectTimer();
+    clearReleaseTimer();
     conversationRef.current.endSession();
     setConnecting(false);
-    connectingRef.current = false;
+    settleInFlight(false);
+    holdingRef.current = false;
     setHolding(false);
-  }, [clearReconnectTimer]);
+  }, [clearReconnectTimer, clearReleaseTimer]);
 
   // --- push to talk ---------------------------------------------------------
   const holdStart = useCallback(async () => {
@@ -376,34 +465,60 @@ export function useCoachAgent() {
       s.track('agent_gate_blocked', { phase: s.phase, reason: 'hold_outside_rest' });
       return;
     }
+    // A quick re-press lands inside the release tail: cancel the pending mute
+    // so the mic never blips shut mid-sentence.
+    clearReleaseTimer();
+    holdingRef.current = true;
     setHolding(true);
     const ready = await connect();
-    if (!ready && conversationRef.current.status !== 'connected') return;
-    conversationRef.current.setMuted(false);
-  }, [connect]);
+    if (!ready || conversationRef.current.status !== 'connected') return;
+    if (!holdingRef.current) {
+      // Released while the connection was still coming up.
+      applyMicState();
+      return;
+    }
+    // Fresh context ONCE, right before the question — this is the only moment
+    // freshness matters for the answer, and it must precede the unmute so the
+    // update lands before the user's words.
+    sendLiveUpdate();
+    // Signal user activity so the agent holds back instead of starting a new
+    // utterance over the user's question.
+    try {
+      conversationRef.current.sendUserActivity();
+    } catch {
+      // No active conversation despite the status check — nothing to signal.
+    }
+    applyMicState();
+  }, [connect, clearReleaseTimer, sendLiveUpdate, applyMicState]);
 
   const holdEnd = useCallback(() => {
+    holdingRef.current = false;
     setHolding(false);
     // Closing the mic is what ends the turn; the socket stays open so the
-    // agent can answer and remember the exchange.
-    if (conversationRef.current.status === 'connected') conversationRef.current.setMuted(true);
-  }, []);
+    // agent can answer and remember the exchange. The mute itself is delayed
+    // by a short tail so the last word of the question is not clipped —
+    // an instant mute hands ASR a fragment and produces confused answers.
+    if (conversationRef.current.status !== 'connected') return;
+    clearReleaseTimer();
+    releaseTimerRef.current = setTimeout(() => {
+      releaseTimerRef.current = null;
+      applyMicState();
+    }, RELEASE_TAIL_MS);
+  }, [clearReleaseTimer, applyMicState]);
 
-  // The mic must be shut the instant a connection lands while nothing is held,
-  // otherwise the first press leaves it open and the agent hears the whole room.
-  useEffect(() => {
-    if (conversation.status !== 'connected') return;
-    conversationRef.current.setMuted(!holding);
-  }, [conversation.status, holding]);
-
-  // Unmount: no pending reconnect may outlive the hook, and ducking is restored.
+  // Unmount: no timer may outlive the hook, and ducking is restored.
   useEffect(() => {
     return () => {
       clearReconnectTimer();
+      clearReleaseTimer();
+      if (captionTimerRef.current !== null) {
+        clearTimeout(captionTimerRef.current);
+        captionTimerRef.current = null;
+      }
       cueEngine.setDucked(false);
       useSessionStore.getState().setAgentActive(false);
     };
-  }, [clearReconnectTimer]);
+  }, [clearReconnectTimer, clearReleaseTimer]);
 
   const talkState: TalkState = !configured
     ? 'unavailable'

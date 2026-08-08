@@ -66,8 +66,9 @@ export function toContextualUpdate(ctx: CoachContext): string {
 
 /**
  * Always-live session feed: one compact sentence-cased line the agent receives
- * whenever the live numbers move (and on the connected heartbeat). Plain text,
- * no JSON — the agent may repeat only what is written here (#36).
+ * on phase changes, when a pending adaptation appears or resolves, and as a
+ * fresh snapshot at the start of every push-to-talk hold. Plain text, no JSON
+ * — the agent may repeat only what is written here (#36).
  */
 export function toLiveUpdate(ctx: CoachContext, timing?: SessionTiming): string {
   const parts: string[] = [`Live: phase ${ctx.phase}`];
