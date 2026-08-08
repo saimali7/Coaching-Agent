@@ -2,6 +2,26 @@
 
 A live voice coach for a strength session: the athlete never touches the screen, the plan adapts mid-session off heart-rate recovery, and the coach explains itself in the rest window. Named honestly, this is a React web app presented inside an iOS device frame (402 × 874 on desktop, full-bleed below 1100px) — not a native iOS build. The rest-window conversation runs on ElevenLabs Conversational AI over a WebSocket; the in-set cues are pre-generated ElevenLabs TTS files played from `public/cues`, so nothing inside a working set needs the network or a model.
 
+## The brief
+
+**The problem.** Coaching apps talk at you. They read out numbers, count reps you already counted, and congratulate you for finishing a set you just finished. None of it changes what you do next, so you end up looking at the screen anyway — which is the one thing you cannot do with a loaded bar on your back.
+
+**The thesis.** A coach earns the earpiece by changing the plan. Not by narrating it. So every spoken line in this product has to pass one test: does it change what the athlete does next? If it does not, it does not get said.
+
+**What the MVP proves.** Three things, in order of how hard they are to fake:
+
+1. **A full session runs without touching the screen.** Voice carries the timing — set-up, a go signal, the last three reps counted, a talking rest timer, the call back in. The phone can stay in a pocket.
+2. **The plan changes mid-session, driven by real physiology.** Heart-rate recovery — how fast the pulse falls in the first 60 seconds of rest — degrades across the session. Two consecutive poor rests and the session cuts its own remaining work, out loud, with its reason.
+3. **The athlete can argue with it.** Hold the mic in a rest window and ask why the set was cut, or say "I feel fine, let me finish." The coach concedes once and names the compensation.
+
+**The one rule that shapes the architecture.** *The rule decides. The model never decides. The agent only reports what has already been decided.* Adaptations come out of a pure function in `engine/rules.ts` — deltas in, decision out, no clock, no model. The language model is handed a context object and forbidden from speaking a number that is not in it. This is why the demo cannot hallucinate a load, and why the session still adapts correctly with the network unplugged and the agent silent.
+
+**Why heart rate, and why the delta.** Absolute heart rate says almost nothing between two people. How fast it *falls* in the first minute of rest is the fatigue signal, and it is the only input honest enough to justify cutting someone's training. For this MVP the trace is a deterministic simulation rather than a chest strap: a demo whose centrepiece depends on the presenter's actual pulse cooperating on stage is a demo that fails on stage. The recovery deltas land on 19 / 8 / 6 bpm every single run, so the cut fires in the third rest, on cue, every time.
+
+**Two tiers of voice, deliberately.** Inside a working set the coach is **Tier 0** — pre-rendered mp3 files, no inference, no network, no chance of a socket drop mistiming a rep count. Only in the rest window does the **conversational agent** get the floor, and it is interrupted the instant rest ends. It is push-to-talk, so it never hears the gym between turns and can never speak over a rep.
+
+**What is deliberately not here.** Automatic rep counting, camera form analysis, sleep and HRV scores, multiple movements, accounts, history. Each one would dilute the single claim this MVP exists to make.
+
 ## The other documents
 
 | File | What it is |
@@ -160,6 +180,32 @@ The heart rate is a scripted trace, not a sensor: peaks of 143 / 152 / 158 / 163
 | `/log` | Adaptation log | Every decision with its trigger and whether it was taken |
 | desktop sidebar | Demo rig | Presenter insurance. Not part of the product; hidden below 1100px |
 
+## Talking to the coach
+
+The mic is **push to talk**: hold the round button — or hold the space bar — speak, and release. The WebSocket stays open between turns, so there is no reconnect delay per question and the agent remembers the exchange; only the microphone opens and closes. Between turns it hears nothing, which is what keeps it from talking over a rep or picking up a room.
+
+By default the mic is live **only in the rest window** (#31, #32), and the agent is cut off the instant rest ends (#33) — it must never speak into a working set. The demo rig can lift that gate with **Microphone → Open in every phase** for free-form conversation; the rig labels that state as off-spec, because it is.
+
+Questions it answers from the live session context, and nothing else:
+
+| Ask | What happens |
+|---|---|
+| "Why did you cut the set?" | The real trigger, in plain words |
+| "Should I go heavier?" | Answered from your logged RIR; if none is logged it asks first |
+| "I had two left in the tank" | Calls `log_rir`, acknowledges in three words |
+| "I feel fine, let me finish" | Concedes, calls `override_adaptation`, names the compensation |
+| "Give me another thirty seconds" | Calls `extend_rest`; the timer visibly moves |
+
+The last three fire client tools that change session state, so the UI moves while you talk. If a number is not in the context object, the coach says it does not have it rather than inventing one.
+
+## Changing the coach's voice
+
+The rig has a **Coach voice** picker: every voice on the account, a preview, and a paste-a-voice-id field for voices the list cannot show. Applying a voice does two things in one action — repoints the ElevenLabs agent *and* re-renders all 27 Tier-0 cues — because the coach speaks through both surfaces and changing one without the other makes it sound like two different people. The rig warns when they have drifted apart.
+
+Cue URLs carry a render version (`/cues/set_done.mp3?v=…`), or the browser would keep serving the previous voice from cache and the change would look broken.
+
+From the CLI instead: set `ELEVENLABS_VOICE_ID` and run `npm run cues:generate -- --force`.
+
 ## API
 
 | Method | Path | Description |
@@ -167,6 +213,10 @@ The heart rate is a scripted trace, not a sensor: peaks of 143 / 152 / 158 / 163
 | `GET` | `/api/health` | Health check, returns status and uptime |
 | `GET` | `/api/voice/status` | Whether key and agent id are both present, plus the agent id |
 | `GET` | `/api/voice/signed-url` | Short-lived ElevenLabs conversation URL. 503 when not configured |
+| `GET` | `/api/voice/voices` | Voices on the account, plus the agent's and the cues' current voice |
+| `POST` | `/api/voice/voice` | Repoints the agent at a voice id. 404 when it is not on the account |
+| `POST` | `/api/voice/cues/regenerate` | Re-renders all 27 cues; writes to `public/cues` and the served build |
+| `GET` | `/api/voice/cues/status` | Which voice the cues were rendered in, and the cache-busting version |
 | `POST` | `/api/telemetry` | Accepts a batch of up to 500 events, returns 202 |
 | `GET` | `/api/telemetry` | Everything captured so far |
 | `DELETE` | `/api/telemetry` | Clears the buffer |
