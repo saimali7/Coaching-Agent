@@ -95,5 +95,35 @@ for (let i = 0; i < entries.length; i++) {
   if (i < entries.length - 1) await delay(350);
 }
 
+// The rig reads this to show which voice the cues were rendered in, and to bust
+// the browser's audio cache. Written here too, or the CLI and the in-app
+// regeneration would disagree about what is on disk.
+if (generated > 0) {
+  let voiceName = voiceId;
+  try {
+    const res = await fetch(`https://api.elevenlabs.io/v1/voices/${voiceId}`, {
+      headers: { 'xi-api-key': apiKey },
+    });
+    if (res.ok) voiceName = (await res.json()).name ?? voiceId;
+  } catch {
+    // Cosmetic only — the id is still correct.
+  }
+  fs.writeFileSync(
+    path.join(outDir, '.meta.json'),
+    `${JSON.stringify(
+      {
+        voiceId,
+        voiceName,
+        version: Date.now(),
+        count: entries.length - failed,
+        generatedAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  console.log(`Wrote ${path.join(outDir, '.meta.json')} (${voiceName}).`);
+}
+
 console.log(`\nDone: ${generated} generated, ${skipped} skipped, ${failed} failed (of ${entries.length} cues).`);
 if (failed > 0) process.exit(1);
