@@ -2,6 +2,16 @@
 
 A live voice coach for a strength session: the athlete never touches the screen, the plan adapts mid-session off heart-rate recovery, and the coach explains itself in the rest window. Named honestly, this is a React web app presented inside an iOS device frame (402 × 874 on desktop, full-bleed below 1100px) — not a native iOS build. The rest-window conversation runs on ElevenLabs Conversational AI over a WebSocket; the in-set cues are pre-generated ElevenLabs TTS files played from `public/cues`, so nothing inside a working set needs the network or a model.
 
+## The other documents
+
+| File | What it is |
+|---|---|
+| [`TECH-SPEC.md`](./TECH-SPEC.md) | The engineering reasoning in one page — problem, architecture, tool choices, how it was scoped, what v2 looks like |
+| [`DEMO.md`](./DEMO.md) | The stage runbook: serving over a tunnel, the four-minute script, the demo rig, what to say out loud |
+| [`mvp-feature-list.md`](./mvp-feature-list.md) | The product brief. Numbered features (`#25`, `#34`, …) are referenced from code comments |
+| [`AGENTS.md`](./AGENTS.md) | Conventions for coding agents working in this repo |
+| [`TASKS.md`](./TASKS.md) | The task board |
+
 ## Quick start
 
 ```bash
@@ -98,7 +108,8 @@ apps/web/src
 │   ├── recovery.ts       pure classification of a 60 s recovery delta
 │   ├── rules.ts          pure rules engine: deltas in, decision out
 │   ├── demoStates.ts     complete, internally consistent snapshots for demo jumps
-│   └── telemetry.ts      batched, fire-and-forget event queue
+│   ├── telemetry.ts      batched, fire-and-forget event queue
+│   └── engine.test.ts    node:test suite driving the engine through advance(dtMs)
 ├── audio/        Tier 0 — cue-manifest.json, priority queue, ducking, earcon synth
 ├── voice/        the ElevenLabs agent: REST-only gate, context object, client tools
 ├── components/   Cadence primitives (presentational only, no store access)
@@ -196,6 +207,7 @@ Copy `.env.example` to `.env`. Every variable actually read by something:
 | `npm run dev:web` | Vite dev server on :5173 with the `/api` proxy |
 | `npm run build` | Builds both apps |
 | `npm run typecheck` | Typechecks both apps |
+| `npm test` | Runs the engine suite (`tsx --test`) in the web workspace. The API has no tests |
 | `npm start` | Runs the compiled API, serving `apps/web/dist` too when it exists |
 | `npm run demo` | `build` then `start` — the whole app on one origin, on `PORT` (default 3000) |
 | `npm run demo:tunnel` | `ngrok http 3000`. Requires ngrok installed and authenticated |
