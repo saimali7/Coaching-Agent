@@ -79,7 +79,7 @@ npm run dev:web    # :5173, proxies /api to :3000
 
 **`npm run dev` at the root does not work as expected.** It is `npm run dev --workspaces --if-present`, npm runs workspaces sequentially, and the API's watcher never exits — so the web server never starts. Always use the two scripts above in separate terminals.
 
-The API reads `.env` at boot only. After `npm run agent:create` writes `ELEVENLABS_AGENT_ID`, restart it.
+The API reads `.env` at boot only. After `npm run agent:create` writes `ELEVENLABS_AGENT_ID`, restart it. If the key is set but no agent id is, the API creates the agent itself on boot (`apps/api/src/voice/bootstrap.ts` spawns `scripts/create-agent.mjs`, the single source of truth for the agent config) — so `ELEVENLABS_API_KEY` alone is a complete configuration.
 
 Without `ELEVENLABS_API_KEY` everything still runs: speech-synthesis cues, `configured: false` from `/api/voice/status`, talk button disabled and labelled "Coach offline".
 

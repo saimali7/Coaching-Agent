@@ -4,6 +4,24 @@ A live voice coach for a strength session: the athlete never touches the screen,
 
 Application live video you could find here - https://drive.google.com/file/d/1wYrJYgD7UisjhjvoiW5j5_qtjEs2Oqmo/view?usp=sharing
 
+## Run it — one command
+
+```bash
+npm install && npm run demo
+```
+
+Open **http://localhost:3000**. Node ≥ 20, Chrome recommended. That is the whole setup: the session, the heart-rate-driven adaptation, and the coach's real recorded voice all work with **zero configuration** — the 27 voice cues are committed as mp3 files, so the coach speaks out of the box.
+
+**To also talk back to the coach** (live two-way conversation), add one line to a `.env` file at the repo root:
+
+```bash
+ELEVENLABS_API_KEY=sk_your_key_here
+```
+
+and run the command again — the server creates and configures the conversational agent automatically on boot. Nothing else to set up.
+
+**60-second tour:** widen the window past 1100px so the presenter rig appears → press **Start training** and allow the microphone → tap the pad to log reps (the coach counts the last three out loud) → set the rig clock to **4×** → after set 2 recovery turns poor, after set 3 the session cuts itself and says why → **hold the mic button (or Space), speak, release** — ask *"why did you cut the set?"* or say *"I feel fine, let me finish"* and the coach concedes with a named compensation. The rig can jump straight to any state if you want the highlights only.
+
 ## The brief
 
 **The problem.** Coaching apps talk at you. They read out numbers, count reps you already counted, and congratulate you for finishing a set you just finished. None of it changes what you do next, so you end up looking at the screen anyway — which is the one thing you cannot do with a loaded bar on your back.
