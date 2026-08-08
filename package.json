@@ -1,0 +1,20 @@
+{
+  "name": "coaching-agent",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev --workspace @coaching-agent/api",
+    "dev:web": "npm run dev --workspace @coaching-agent/web",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "start": "npm run start --workspace @coaching-agent/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
