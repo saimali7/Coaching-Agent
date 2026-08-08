@@ -2,13 +2,69 @@
 
 The stage script for the AI voice coach MVP. Four minutes, one movement, one adaptation that fires on its own.
 
+## Serving the demo
+
+### The recommended path
+
+Build once and serve everything from the API, then put one tunnel in front of it. Two terminals:
+
+```bash
+npm run demo          # builds both workspaces, then serves UI + API on PORT (default 3000)
+ngrok http 3000       # second terminal
+```
+
+Open the `https://` forwarding URL ngrok prints.
+
+`npm run demo` is `npm run build && npm run start`. Once `apps/web/dist/index.html` exists the API serves the built frontend itself, so the UI and `/api` are on one port and one origin: one tunnel, no CORS, no dev-server reconnects mid-demo, and a production build rather than an on-the-fly one. Any non-`/api` GET falls back to `index.html`, so `/summary` and `/log` survive a refresh or a direct link; `/api/*` paths that match no route still return `{"error":"Not found"}` as JSON rather than the HTML shell.
+
+ngrok is not installed by this repo. Install it and authenticate once with a free account (`ngrok config add-authtoken <token>`) before the day of the demo. `npm run demo:tunnel` is a shortcut for `ngrok http 3000`.
+
+### Why the HTTPS URL matters
+
+Browsers only grant microphone access on secure origins. Over a plain-http LAN address like `http://192.168.x.x:3000`, `getUserMedia` is refused, so the talk button and the ElevenLabs rest-window agent will not work at all. An ngrok HTTPS URL is the simplest way to demo the voice agent on a real phone — the tunnel is not a workaround here, it is what makes the mic available.
+
+### The free-tier interstitial
+
+The first visit to a free random ngrok domain shows a "You are about to visit…" warning page with a **Visit Site** button. Click through on every device you plan to use before you are on stage, so the audience never sees it. A reserved domain or a paid plan removes the interstitial.
+
+### Picking up code changes
+
+The API serves a static build, so editing source does nothing until you rebuild. Stop the server and run `npm run demo` again. There is no hot reload in this mode — that is the trade for stability on stage.
+
+### The dev-server alternative
+
+If you must demo unbuilt code, the Vite dev server can be tunnelled too. Set `TUNNEL_HOST` to the ngrok hostname (no scheme, no trailing slash — both are stripped for you):
+
+```bash
+TUNNEL_HOST=abc123.ngrok-free.app npm run dev:web
+```
+
+`vite.config.ts` then adds that host to `server.allowedHosts` and points HMR at `wss://<host>:443`. Without it, Vite rejects the tunnel's forwarded Host header and the HMR socket tries to reach `ws://localhost:5173` from a public origin.
+
+The honest caveat: this needs a second tunnel for the API on :3000, or a proxy in front of both, because the dev server's `/api` proxy points at localhost. And HMR reconnect noise is a real risk on stage. Use the built single-origin path unless you have a reason not to.
+
+### Check these once the tunnel is up
+
+| Check | Expected |
+|---|---|
+| `https://<host>/api/health` | JSON, `status: "ok"` |
+| `https://<host>/api/voice/status` | JSON, `configured: true` if a key and agent id are set. `false` means the talk button will read "Coach offline" |
+| `https://<host>/` | The page loads inside the phone frame |
+| `https://<host>/summary` and `/log` | Load directly, no 404 — the SPA fallback is working |
+| Talk button in a rest window | The microphone permission prompt appears |
+
+One line on the demo rig: it is only visible at viewport widths of 1100px and up. Present from a laptop, not a phone, if you want the state jumps.
+
 ## Before you go on
 
 - [ ] `.env` exists at the repo root and contains both `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID`. If the agent id is missing, run `npm run agent:create` and **restart the API** — it only reads `.env` at boot.
 - [ ] `npm run cues:generate` has been run. Check `apps/web/public/cues` is populated — it should hold 27 mp3s, one per line in `apps/web/src/audio/cue-manifest.json`. An empty directory means every cue falls back to browser speech synthesis, which works but sounds like a different coach.
-- [ ] Both dev servers are up, in separate terminals: `npm run dev:api` (:3000) and `npm run dev:web` (:5173). Do not use `npm run dev` — it runs workspaces sequentially and never reaches the web app.
-- [ ] http://localhost:5173 is open at a viewport of **1200px or wider**. Below 1100px the phone frame flattens and the demo rig disappears entirely.
-- [ ] Microphone permission has been granted once already, in this browser, on this origin. Do not let the permission prompt happen on stage.
+- [ ] `npm run demo` has been run and is still running — it builds both workspaces and then serves the UI and the API together on :3000. Do not use `npm run dev` — it runs workspaces sequentially and never reaches the web app.
+- [ ] `ngrok http 3000` is up in a second terminal, and you have the `https://` forwarding URL to hand. ngrok is installed and authenticated (`ngrok config add-authtoken <token>`).
+- [ ] The ngrok free-tier interstitial has been clicked through once on every device you will use, so nobody sees "You are about to visit…" on stage.
+- [ ] `https://<host>/api/health` and `https://<host>/api/voice/status` both answer over the tunnel, and `/summary` loads directly.
+- [ ] The demo URL is open at a viewport of **1200px or wider**. Below 1100px the phone frame flattens and the demo rig disappears entirely.
+- [ ] Microphone permission has been granted once already, in this browser, on the exact origin you will present from. The mic only works on an HTTPS origin, so grant it on the ngrok URL, not on `localhost` — and do not let the permission prompt happen on stage.
 - [ ] System volume up, and audio is coming out of the room's speakers, not the laptop.
 - [ ] Do one silent dry run and then reload the page. The store is in-memory, so a reload is a clean slate.
 

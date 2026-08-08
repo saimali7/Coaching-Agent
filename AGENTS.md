@@ -85,6 +85,12 @@ Without `ELEVENLABS_API_KEY` everything still runs: speech-synthesis cues, `conf
 
 The demo rig sidebar is hidden below a 1100px viewport. If you are testing the rig, widen the window.
 
+**Single-origin mode.** `apps/api/src/app.ts` serves the built frontend itself when `apps/web/dist/index.html` exists — UI and API on one port, which is what `npm run demo` (`build` then `start`) and the ngrok demo path rely on. No build present means serving is skipped entirely and dev keeps using the Vite dev server and its `/api` proxy. `WEB_DIST` (absolute path) overrides where the build is read from.
+
+**The SPA fallback must never swallow `/api`.** Ordering in `createApp()` is load-bearing: all `/api` routers, then the `/api` catch-all that returns `{"error":"Not found"}` as JSON, and only then the static middleware and the `index.html` fallback for non-`/api` GETs. If you add a route, add it above the `/api` 404, and never move the fallback ahead of it — an API path that returns the HTML shell instead of JSON is a silent client failure.
+
+**`TUNNEL_HOST`** exists for tunnelled dev: `apps/web/vite.config.ts` reads it (hostname only; scheme and trailing slash are stripped), adds it to `server.allowedHosts` and points HMR at `wss://<host>:443`.
+
 ## Files that are generated
 
 `apps/web/src/routeTree.gen.ts` — written by the TanStack Router plugin on every dev run and build. It is committed so a fresh clone typechecks. Do not hand-edit it.

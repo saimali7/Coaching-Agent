@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import {
   Badge,
@@ -15,6 +15,7 @@ import { SAFETY_CEILING_BPM } from '../engine/programme';
 import { cueEngine } from '../audio/cueEngine';
 import { CUE_IDS } from '../audio/cueScript';
 import { useCoachAgent } from '../voice/useCoachAgent';
+import { useWakeLock } from '../lib/useWakeLock';
 import { clock, deltaText, zoneLabel, zoneTone } from './format';
 
 // S1–S6 from the design: idle · set · rest · adaptation sheet · override · safety abort.
@@ -40,6 +41,12 @@ export function LiveSession() {
   const currentLog = sets[currentSet - 1];
   const reps = currentLog?.repsCompleted ?? 0;
   const target = currentLog?.targetReps ?? programme.targetReps;
+
+  const onWakeLockUnavailable = useCallback(
+    (reason: string) => useSessionStore.getState().track('wake_lock_unavailable', { reason }),
+    [],
+  );
+  useWakeLock(phase === 'set' || phase === 'rest', onWakeLockUnavailable);
 
   useEffect(() => {
     if (phase === 'complete') {

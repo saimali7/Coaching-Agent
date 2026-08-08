@@ -27,6 +27,27 @@ docker compose up --build     # or: npm run docker
 
 That serves the built frontend from nginx on http://localhost:8080 with `/api` proxied to the API container, so everything is on one origin.
 
+### Demo over a tunnel
+
+```bash
+npm run demo          # build both workspaces, then serve UI + API on PORT (default 3000)
+ngrok http 3000       # second terminal; npm run demo:tunnel is the same thing
+```
+
+Open the `https://` URL ngrok prints. ngrok is not bundled with this repo — install it and authenticate once with a free account (`ngrok config add-authtoken <token>`).
+
+**Single origin.** When `apps/web/dist/index.html` exists, the API serves the built frontend from `apps/web/dist` (static files with a 1 hour max-age), so one port covers the whole app and one tunnel is enough. Any non-`/api` GET falls back to `index.html` so `/summary` and `/log` survive a refresh or a direct link, while unmatched `/api/*` paths still return `{"error":"Not found"}` as JSON. If the build is absent, serving is skipped entirely and development is unaffected — the Vite dev server and its `/api` proxy work exactly as before. Set `WEB_DIST` to an absolute path to serve the build from somewhere else.
+
+**HTTPS is required for the microphone.** Browsers only expose `getUserMedia` on secure origins, so the rest-window agent will not work over a plain-http LAN address such as `http://192.168.x.x:3000`. The ngrok HTTPS URL is the simplest way to test the voice agent on a phone.
+
+**Tunnelling the dev server instead.** Set `TUNNEL_HOST` to the ngrok hostname (scheme and trailing slash are stripped for you) and Vite adds it to `server.allowedHosts` and points HMR at `wss://<host>:443`:
+
+```bash
+TUNNEL_HOST=abc123.ngrok-free.app npm run dev:web
+```
+
+Without it Vite rejects the tunnel's forwarded Host header and the HMR socket tries to reach `ws://localhost:5173` from a public origin. This path needs a second tunnel for the API on :3000 (or a proxy in front of both), which is why the built single-origin mode is the recommended one for a demo.
+
 ## ElevenLabs setup
 
 The app runs without any of this (see the note at the end), but the rest-window agent and the real coach voice need a key.
@@ -161,6 +182,8 @@ Copy `.env.example` to `.env`. Every variable actually read by something:
 | `API_PORT` | Compose | Host port for the API container in the dev stack (default 3000) |
 | `API_PROXY_TARGET` | Vite dev server | Where `/api` is proxied. Server side only |
 | `VITE_API_URL` | Client bundle | Absolute API origin. Leave empty to use `/api` |
+| `WEB_DIST` | API | Absolute path to the built frontend. Unset means `apps/web/dist`; serving is skipped when no build is there |
+| `TUNNEL_HOST` | Vite dev server | Tunnel hostname for dev over ngrok. Adds the host to `allowedHosts` and points HMR at `wss://<host>:443` |
 
 `API_PROXY_TARGET` deliberately has no `VITE_` prefix. Anything prefixed `VITE_` is inlined into the client bundle, so using one variable for both the proxy target and the client base URL would send an internal Docker hostname to the browser.
 
@@ -173,7 +196,9 @@ Copy `.env.example` to `.env`. Every variable actually read by something:
 | `npm run dev:web` | Vite dev server on :5173 with the `/api` proxy |
 | `npm run build` | Builds both apps |
 | `npm run typecheck` | Typechecks both apps |
-| `npm start` | Runs the compiled API |
+| `npm start` | Runs the compiled API, serving `apps/web/dist` too when it exists |
+| `npm run demo` | `build` then `start` — the whole app on one origin, on `PORT` (default 3000) |
+| `npm run demo:tunnel` | `ngrok http 3000`. Requires ngrok installed and authenticated |
 | `npm run agent:create` | Creates the ElevenLabs agent, writes `ELEVENLABS_AGENT_ID` to `.env` |
 | `npm run cues:generate` | Renders the cue manifest to `apps/web/public/cues/*.mp3`. `-- --force` re-renders |
 | `npm run docker` | Production-like stack, web on :8080 |

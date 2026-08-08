@@ -126,6 +126,7 @@ export type TelemetryType =
   | 'cue_latency'
   | 'mute_change'
   | 'screen_unlock'
+  | 'wake_lock_unavailable'
   | 'hr_strap_drop'
   | 'safety_ceiling_breach'
   | 'adaptation_proposed'
