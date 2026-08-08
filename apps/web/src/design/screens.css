@@ -465,18 +465,18 @@
 }
 
 /* --------------------------------------------------------------------------
-   Live session — mute chip. A self-centred footnote, not a floating control:
-   muting the coach is deliberate, so it must not sit under a stray thumb.
+   Live session — mute chip. Lives in the talkbar row now; the bar owns the
+   spacing. Muting the coach is deliberate, so it must not sit under a stray
+   thumb — it keeps its own hit area and quiet skin.
    -------------------------------------------------------------------------- */
 .ls-mute {
   appearance: none;
   -webkit-appearance: none;
   display: inline-flex;
   align-items: center;
-  align-self: center;
   gap: var(--space-3);
   flex: none;
-  margin: var(--space-5) auto 0;
+  margin: 0;
   padding: var(--space-3) var(--space-5);
   border: 1px solid var(--border-hairline);
   border-radius: var(--radius-pill);
@@ -1237,9 +1237,11 @@
   box-shadow: 0 0 32px -4px rgba(47, 214, 156, 0.55);
 }
 
+/* 44px — the touch minimum. The compact instance lives in the talkbar and must
+   be honestly pressable, not a decorative dot. */
 .ls-talk.is-compact {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-width: 1px;
 }
 
@@ -1247,29 +1249,34 @@
   transform: scale(1.06);
 }
 
-.ls-chips {
+/* The talkbar. One bottom-anchored row — mic, status, mute — rendered in every
+   phase so the button is always in the same place under the same thumb. */
+.ls-talkbar {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-5);
-  flex-wrap: wrap;
+  margin-top: var(--space-5);
   flex: none;
 }
 
-.ls-ptt {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin-top: var(--space-5);
-}
-
-.ls-ptt-label {
+.ls-talkbar-label {
   font-family: var(--font-display);
   font-size: var(--size-label-sm);
   font-weight: var(--weight-bold);
+  line-height: 1.3;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--text-tertiary);
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.ls-talkbar-label.is-holding {
+  color: var(--mint-300);
+}
+
+.ls-talkbar-label.is-replying {
+  color: var(--state-caution);
 }
 
 /* Demo rig — microphone mode toggle. */

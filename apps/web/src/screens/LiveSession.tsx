@@ -183,9 +183,15 @@ export function LiveSession() {
 
       {phase === 'set' && (
         <div className="ls-actions">
-          <div className="ls-gate">
-            <Icon name="lock" size={14} /> Mic opens in the rest window
-          </div>
+          {agent.micAlwaysOn ? (
+            <div className="ls-gate">
+              Coach is listening on hold — one-sentence answers mid-set
+            </div>
+          ) : (
+            <div className="ls-gate">
+              <Icon name="lock" size={14} /> Mic opens in the rest window
+            </div>
+          )}
           <button className="ls-tap" onClick={s.logRep} type="button">
             <span className="ls-tap-title">Tap to log a rep</span>
             <span className="ls-tap-sub">the coach counts your last three out loud</span>
@@ -238,7 +244,37 @@ export function LiveSession() {
         </div>
       )}
 
-      <div className="ls-chips">
+      {/* The mic is a permanent fixture: one bottom-anchored row, same place in
+          every phase, so muscle memory holds. In rest the 76px talk button above
+          owns the gesture, so the bar carries only the mute chip there — never
+          two mics on one screen. */}
+      <div className="ls-talkbar">
+        {phase !== 'rest' && (
+          <>
+            <PushToTalk agent={agent} compact />
+            <span
+              className={`ls-talkbar-label${
+                agent.holding
+                  ? ' is-holding'
+                  : agent.talkState === 'speaking'
+                    ? ' is-replying'
+                    : ''
+              }`}
+            >
+              {agent.talkState === 'unavailable'
+                ? 'Coach offline'
+                : agent.talkState === 'connecting'
+                  ? 'Connecting…'
+                  : agent.holding
+                    ? 'Listening'
+                    : agent.talkState === 'speaking'
+                      ? 'Coach replying'
+                      : agent.canTalk
+                        ? 'Hold to talk · space works too'
+                        : 'Mic opens in rest'}
+            </span>
+          </>
+        )}
         <button
           className="ls-mute"
           type="button"
@@ -248,17 +284,6 @@ export function LiveSession() {
           <Icon name={muted ? 'circle-alert' : 'zap'} size={14} />
           {muted ? 'Coach muted' : 'Coach on'}
         </button>
-
-        {/* The rig can lift the rest-window gate; when it does, the mic has to
-            be reachable from every phase, not just the rest layout. */}
-        {agent.micAlwaysOn && phase !== 'rest' && agent.canTalk && (
-          <div className="ls-ptt">
-            <PushToTalk agent={agent} compact />
-            <span className="ls-ptt-label">
-              {agent.holding ? 'Listening' : 'Hold to talk'}
-            </span>
-          </div>
-        )}
       </div>
 
       <Sheet
@@ -355,7 +380,9 @@ function PushToTalk({ agent, compact = false }: { agent: Agent; compact?: boolea
     };
   }, [holding, holdEnd]);
 
-  const state = holding ? 'holding' : talkState;
+  // Disabled reads as unavailable but the button never unmounts — the talkbar
+  // must not jump when the rig restores the rest-only gate.
+  const state = !canTalk ? 'unavailable' : holding ? 'holding' : talkState;
 
   return (
     <button
@@ -367,9 +394,15 @@ function PushToTalk({ agent, compact = false }: { agent: Agent; compact?: boolea
       disabled={!canTalk}
       type="button"
       aria-pressed={holding}
-      aria-label={holding ? 'Release to send' : 'Hold to talk to your coach'}
+      aria-label={
+        !canTalk
+          ? 'Mic opens in rest'
+          : holding
+            ? 'Release to send'
+            : 'Hold to talk to your coach'
+      }
     >
-      <Icon name="message-circle" size={compact ? 18 : 28} />
+      <Icon name="message-circle" size={compact ? 20 : 28} />
     </button>
   );
 }

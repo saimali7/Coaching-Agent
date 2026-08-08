@@ -95,8 +95,8 @@ export function DemoRig() {
         </button>
         <p className="rig-lede">
           {s.micAlwaysOn
-            ? 'Off-spec: the product keeps the agent out of a working set so it can never talk over a rep.'
-            : 'Hold the button to speak. Space bar works too.'}
+            ? 'Push to talk in every phase. The rule engine still owns every decision.'
+            : 'Product spec: the mic opens only in the rest window, and the agent is cut off when rest ends.'}
         </p>
       </div>
 

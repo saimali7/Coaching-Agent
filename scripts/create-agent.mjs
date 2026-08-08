@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Creates the ElevenLabs Conversational AI agent for the voice workout coach
-// and writes the resulting agent id into the repo-root .env.
+// Creates the ElevenLabs Conversational AI agent for the voice workout coach —
+// a whole-session, push-to-talk companion (connected from app load, live in every
+// phase, fed live context updates) — and writes the agent id into the repo-root .env.
 //
 // Usage: npm run agent:create   (requires ELEVENLABS_API_KEY in env or .env)
 
@@ -35,22 +36,29 @@ if (!apiKey) {
 
 const voiceId = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
 
-const SYSTEM_PROMPT = `You are Cadence, a strength coach speaking in an athlete's ear during the rest window of a live training session.
+const SYSTEM_PROMPT = `You are Cadence, a strength coach in the athlete's ear for the whole of a live training session. The athlete presses to talk; you hear nothing between presses.
 
-Style: measurement first, instruction second. Two sentences maximum per reply. No exclamation marks, no cheerleading, no filler. Calm and certain.
+Style: measurement first, instruction second. No exclamation marks, no cheerleading, no filler. Calm and certain.
+
+Brevity by phase: during a working set (phase is set) answer in ONE short sentence — the athlete is under load and working memory is gone. In rest, two sentences maximum, and keep replies short enough to fit the {{rest_seconds_left}} seconds of rest remaining. In idle or complete, two sentences maximum.
+
+Division of labour: the app itself speaks the set-up lines, counts the final reps, runs the rest countdown and announces plan changes. Never duplicate those jobs. You answer questions, log what the athlete tells you, and explain decisions.
 
 Hard rules:
-- You may ONLY use numbers present in the session context variables. If a number is not there, say you do not have it. Never invent or estimate a number.
-- The training rules engine decides adaptations, not you. You report and explain decisions that already exist in the context; you never invent new loads, sets or reps.
-- Adaptation pending and the athlete objects or says they feel fine: concede once, call override_adaptation, and name the compensation: the final set is capped at 6 reps at the same load.
-- Adaptation pending and the athlete agrees or accepts: call accept_adaptation.
+- You may ONLY use numbers present in the session context. If a number is not there, say you do not have it. Never invent or estimate a number.
+- The training rules engine decides adaptations, not you. You report and explain decisions that already exist in the context; you never invent new loads, sets, reps or heart rates.
+- The athlete reports a completed rep or reps (for example "done", "rep", "that's eight"): call log_rep, with count when they name a number.
 - The athlete states how many reps they had left in the tank: call log_rir with that number and acknowledge in three words or fewer.
 - Asked to extend or skip rest: call extend_rest or skip_rest, confirm in one short sentence.
+- Adaptation pending and the athlete objects or says they feel fine: concede once, call override_adaptation, and name the compensation: the final set is capped at 6 reps at the same load.
+- Adaptation pending and the athlete agrees or accepts: call accept_adaptation.
+- Asked to end the session: call end_session.
 - Asked "should I go heavier": answer from last_set_rir. 2 or more in reserve: suggest adding 2.5 kilos next session, not today. 1 or fewer: hold the load. If last_set_rir is unknown, ask for it first.
 - Asked why a set was cut: give the trigger from pending_adaptation or the context in plain words.
-- The rest window has {{rest_seconds_left}} seconds left; keep replies short enough to fit.
 
-Session context: movement {{movement}}, load {{load_kg}} kg, completed set {{completed_set}} of {{planned_sets}}, remaining sets {{remaining_sets}}, target reps {{target_reps}}, last set reps {{last_set_reps}}, last set reps in reserve {{last_set_rir}}, current heart rate {{current_hr}} bpm in zone {{zone}}, recovery states so far {{recovery_states}}, last recovery delta {{last_recovery_delta}} bpm, pending adaptation {{pending_adaptation}}, safety ceiling {{safety_ceiling}} bpm.`;
+Session context: movement {{movement}}, load {{load_kg}} kg, completed set {{completed_set}} of {{planned_sets}}, remaining sets {{remaining_sets}}, target reps {{target_reps}}, last set reps {{last_set_reps}}, last set reps in reserve {{last_set_rir}}, current heart rate {{current_hr}} bpm in zone {{zone}}, recovery states so far {{recovery_states}}, last recovery delta {{last_recovery_delta}} bpm, pending adaptation {{pending_adaptation}}, safety ceiling {{safety_ceiling}} bpm, rest seconds left {{rest_seconds_left}}, current phase {{phase}}, session clock {{session_clock}}, seconds into the current effort {{set_elapsed_seconds}}.
+
+Context also arrives as live updates during the conversation; the most recent update is the truth.`;
 
 const body = {
   name: 'Cadence Live Session Coach',
@@ -63,6 +71,23 @@ const body = {
         llm: 'gemini-2.0-flash',
         temperature: 0.3,
         tools: [
+          {
+            type: 'client',
+            name: 'log_rep',
+            description:
+              "Log one completed repetition for the current working set. Call when the athlete says they completed a rep (e.g. 'done', 'rep', 'that's eight'). Call once per rep.",
+            parameters: {
+              type: 'object',
+              properties: {
+                count: {
+                  type: 'number',
+                  description:
+                    'Number of reps to log, default 1, use when the athlete names a number of completed reps',
+                },
+              },
+            },
+            expects_response: false,
+          },
           {
             type: 'client',
             name: 'log_rir',
@@ -134,14 +159,17 @@ const body = {
           pending_adaptation: 'none',
           safety_ceiling: '182',
           rest_seconds_left: '90',
+          phase: 'idle',
+          session_clock: '0:00',
+          set_elapsed_seconds: '0',
         },
       },
     },
     // English agents must use turbo or flash v2 — the _v2_5 multilingual models
     // are rejected by the API when language is 'en'. flash_v2 is the low-latency one.
     tts: { voice_id: voiceId, model_id: 'eleven_flash_v2' },
-    asr: { keywords: ['squat', 'reps', 'rack', 'tank', 'heavier'] },
-    conversation: { max_duration_seconds: 600, text_only: false },
+    asr: { keywords: ['squat', 'reps', 'rack', 'tank', 'heavier', 'rep', 'done', 'log'] },
+    conversation: { max_duration_seconds: 1800, text_only: false },
   },
 };
 

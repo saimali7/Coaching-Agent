@@ -226,7 +226,7 @@ export function createInitialState(): SessionState {
     telemetry: [],
     muted: false,
     agentActive: false,
-    micAlwaysOn: false,
+    micAlwaysOn: true,
     aborted: null,
   };
 }

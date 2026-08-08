@@ -87,9 +87,9 @@ export type SessionState = {
   muted: boolean;
   agentActive: boolean;
   /**
-   * Presenter escape hatch. The product rule is that the mic opens only in REST
-   * (#31, #32) so the agent can never speak into a working set — this lifts that
-   * gate for free-form conversation during a demo. Off by default.
+   * On (the default): push-to-talk in every phase — the coach rides along for
+   * the whole session. Off (rig toggle): the original spec gate, mic only in
+   * REST (#31, #32) and the agent cut off the instant rest ends (#33).
    */
   micAlwaysOn: boolean;
   aborted: { reason: string; hrAtAbort: number } | null;
@@ -189,6 +189,7 @@ export function buildCoachContext(s: SessionState): CoachContext {
   const remainingSets = Math.max(0, s.plannedSetsDynamic - s.currentSet);
   const pending = s.pendingAdaptation;
   return {
+    phase: s.phase,
     movement: s.programme.movement,
     loadKg: s.programme.loadKg,
     completedSet: s.currentSet,

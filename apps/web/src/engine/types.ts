@@ -135,7 +135,9 @@ export type TelemetryType =
   | 'adaptation_overridden'
   | 'agent_connect'
   | 'agent_disconnect'
+  | 'agent_reconnect'
   | 'agent_gate_blocked'
+  | 'voice_rep_logged'
   | 'demo_speed_change'
   | 'demo_state_jump'
   | 'voice_changed'
@@ -155,6 +157,7 @@ export type TelemetryEvent = {
 // ---------------------------------------------------------------------------
 
 export type CoachContext = {
+  phase: SessionPhase;
   movement: string;
   loadKg: number;
   completedSet: number;
