@@ -2,6 +2,8 @@
 
 A live voice coach for a strength session: the athlete never touches the screen, the plan adapts mid-session off heart-rate recovery, and the coach explains itself in the rest window. Named honestly, this is a React web app presented inside an iOS device frame (402 × 874 on desktop, full-bleed below 1100px) — not a native iOS build. The rest-window conversation runs on ElevenLabs Conversational AI over a WebSocket; the in-set cues are pre-generated ElevenLabs TTS files played from `public/cues`, so nothing inside a working set needs the network or a model.
 
+Application live video you could find here - https://drive.google.com/file/d/1wYrJYgD7UisjhjvoiW5j5_qtjEs2Oqmo/view?usp=sharing
+
 ## The brief
 
 **The problem.** Coaching apps talk at you. They read out numbers, count reps you already counted, and congratulate you for finishing a set you just finished. None of it changes what you do next, so you end up looking at the screen anyway — which is the one thing you cannot do with a loaded bar on your back.
