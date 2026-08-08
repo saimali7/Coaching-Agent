@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/colors.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/typography.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/radius.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/motion.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/tokens/base.css">
+<link rel="stylesheet" href="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/styles.css">
+<script>window.CADENCE_ICON_BASE='assets/icons';</script>
+<script src="_ds/cadence-design-system-0571724e-fe73-45cf-9896-f5ea6f2d9278/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#151312;-webkit-font-smoothing:antialiased}
+a{color:var(--mint-400);text-decoration:none}
+a:hover{color:var(--mint-300)}
+@keyframes cd-breathe{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.13);opacity:1}}
+@keyframes cd-emit{0%{transform:scale(.6);opacity:.55}100%{transform:scale(1.9);opacity:0}}
+@keyframes cd-wf{0%,100%{height:5px}50%{height:19px}}
+@keyframes cd-listen{0%,100%{opacity:.25}50%{opacity:.9}}
+@keyframes cd-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes cd-beat{0%,100%{transform:scale(1)}12%{transform:scale(1.22)}26%{transform:scale(1)}38%{transform:scale(1.1)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;justify-content:center;align-items:flex-start;gap:34px;padding:34px 40px 64px;font-family:var(--font-sans);color:var(--ink-000)">
+
+<div style="display:flex;flex-direction:column;gap:14px;flex:none">
+<div style="display:flex;align-items:baseline;gap:10px;font:700 11px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:#7B7570">Cadence<span style="color:#57534F">·</span>Live session coaching</div>
+
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" width="{{ 402 }}" height="{{ 874 }}" hint-size="402px,874px">
+<div style="height:100%;background:#0C0B0A;color:#FCFAF7;display:flex;flex-direction:column;padding:62px 20px 30px;position:relative;overflow:hidden">
+
+<sc-if value="{{ showSession }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Live session" style="display:flex;flex-direction:column;height:100%">
+
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+<div style="display:flex;flex-direction:column;gap:5px">
+<div style="font:700 15px/1 var(--font-display);letter-spacing:.14em;text-transform:uppercase">{{ movement }}</div>
+<div style="font:500 12px/1 var(--font-sans);letter-spacing:.06em;color:#A49E98">{{ planLine }}</div>
+</div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+<div style="display:flex;align-items:center;gap:7px">
+<div style="animation:cd-beat 1.05s ease-in-out infinite;display:flex">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Icon" name="heart" size="{{ 17 }}" color="{{ hrColor }}" hint-size="17px,17px"></x-import>
+</div>
+<div style="font:700 30px/1 var(--font-numeric);letter-spacing:-.03em;font-variant-numeric:tabular-nums">{{ hrText }}</div>
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.14em;color:#7B7570;padding-bottom:3px">BPM</div>
+</div>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Badge" tone="{{ zoneTone }}" hint-size="auto,20px">{{ zoneLabel }}</x-import>
+</div>
+</div>
+
+<div style="display:flex;gap:6px;margin-top:18px">
+<sc-for list="{{ pips }}" as="p" hint-placeholder-count="4">
+<div style="flex:1;display:flex;flex-direction:column;gap:6px">
+<div style="height:5px;border-radius:99px;background:rgba(255,255,255,.10);overflow:hidden">
+<div style="height:100%;border-radius:99px;background:#2FD69C;width:{{ p.fill }}%"></div>
+</div>
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.14em;color:#7B7570">{{ p.label }}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display:grid;place-items:center;margin:26px 0 4px">
+<div style="position:relative;width:128px;height:128px;display:grid;place-items:center">
+<div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,255,255,.09)"></div>
+<div style="position:absolute;inset:18px;border-radius:50%;border:1px solid rgba(47,214,156,.22)"></div>
+<sc-if value="{{ speaking }}">
+<div style="position:absolute;inset:18px;border-radius:50%;border:1px solid rgba(47,214,156,.6);animation:cd-emit 1.7s cubic-bezier(.16,1,.3,1) infinite"></div>
+<div style="position:absolute;inset:18px;border-radius:50%;border:1px solid rgba(47,214,156,.45);animation:cd-emit 1.7s cubic-bezier(.16,1,.3,1) .85s infinite"></div>
+</sc-if>
+<sc-if value="{{ listening }}">
+<div style="position:absolute;inset:8px;border-radius:50%;border:2px dashed rgba(47,214,156,.5);animation:cd-listen 1.4s ease-in-out infinite"></div>
+</sc-if>
+<div style="position:relative;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 42% 36%,#B4F4DD 0%,#2FD69C 46%,#158A64 100%);box-shadow:0 0 44px rgba(47,214,156,.34)">
+<sc-if value="{{ speaking }}">
+<div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 42% 36%,#DCFBEF 0%,#4FE0AC 50%,#1BB280 100%);animation:cd-breathe 1.5s ease-in-out infinite"></div>
+</sc-if>
+<sc-if value="{{ alarmed }}">
+<div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 42% 36%,#FFD37A 0%,#FFA818 48%,#D68500 100%)"></div>
+</sc-if>
+<sc-if value="{{ orbIdle }}">
+<div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 42% 36%,#3C3937 0%,#232120 60%,#171615 100%)"></div>
+</sc-if>
+</div>
+</div>
+</div>
+
+<div style="text-align:center;min-height:118px;display:flex;flex-direction:column;justify-content:center;gap:6px">
+<sc-if value="{{ hasHero }}" hint-placeholder-val="{{ true }}">
+<div style="font:700 88px/.86 var(--font-numeric);letter-spacing:-.045em;font-variant-numeric:tabular-nums">{{ heroValue }}</div>
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:#7B7570">{{ heroLabel }}</div>
+</sc-if>
+<sc-if value="{{ isIdle }}">
+<div style="font:700 34px/1.05 var(--font-display);letter-spacing:-.02em">Ready when you are</div>
+<div style="font:400 15px/1.5 var(--font-sans);color:#A49E98;text-wrap:pretty;padding:0 22px">Strap is streaming. The session runs on voice — you can put the phone down.</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ showCaption }}">
+<div style="display:flex;gap:11px;align-items:flex-start;padding:14px 16px;background:#1D1B1A;border:1px solid rgba(255,255,255,.07);border-radius:16px;min-height:60px;margin-top:6px">
+<div style="display:flex;align-items:center;gap:2.5px;height:22px;padding-top:1px">
+<sc-if value="{{ speaking }}">
+<div style="width:2.5px;border-radius:99px;background:#2FD69C;animation:cd-wf .62s ease-in-out infinite"></div>
+<div style="width:2.5px;border-radius:99px;background:#2FD69C;animation:cd-wf .62s ease-in-out .12s infinite"></div>
+<div style="width:2.5px;border-radius:99px;background:#2FD69C;animation:cd-wf .62s ease-in-out .24s infinite"></div>
+<div style="width:2.5px;border-radius:99px;background:#2FD69C;animation:cd-wf .62s ease-in-out .07s infinite"></div>
+</sc-if>
+<sc-if value="{{ quiet }}">
+<div style="width:6px;height:6px;border-radius:50%;background:#3C3937"></div>
+</sc-if>
+</div>
+<div style="flex:1;font:400 15px/1.5 var(--font-sans);color:#EFEAE4;text-wrap:pretty">{{ caption }}</div>
+</div>
+</sc-if>
+
+<div style="display:flex;gap:6px;margin-top:12px">
+<sc-for list="{{ deltas }}" as="d" hint-placeholder-count="3">
+<div style="flex:1;padding:9px 10px;border-radius:12px;background:#171615;border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:4px">
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.14em;color:#7B7570">{{ d.label }}</div>
+<div style="display:flex;align-items:baseline;gap:5px">
+<div style="font:700 19px/1 var(--font-numeric);letter-spacing:-.03em;font-variant-numeric:tabular-nums">{{ d.value }}</div>
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.1em;color:{{ d.color }}">{{ d.state }}</div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="flex:1;min-height:10px"></div>
+
+<sc-if value="{{ isIdle }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="primary" size="lg" full-width="{{ true }}" icon="play" on-click="{{ start }}" hint-size="100%,52px">Start training</x-import>
+<div style="text-align:center;font:500 11px/1 var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#7B7570">{{ sourceLine }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSet }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;justify-content:center;gap:7px;font:700 11px/1 var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#7B7570">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Icon" name="lock" size="{{ 14 }}" hint-size="14px,14px"></x-import>
+Mic opens in the rest window
+</div>
+<div onClick="{{ logRep }}" style="height:104px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;user-select:none" style-hover="background:rgba(255,255,255,.14)" style-active="transform:scale(.97)">
+<div style="font:700 14px/1 var(--font-display);letter-spacing:.16em;text-transform:uppercase">Tap to log a rep</div>
+<div style="font:400 13px/1 var(--font-sans);color:#A49E98">or say “done” — it counts either way</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRest }}">
+<div style="display:flex;align-items:center;gap:14px">
+<div onClick="{{ openTalk }}" style="width:76px;height:76px;flex:none;border-radius:50%;border:1.5px solid rgba(47,214,156,.55);background:rgba(47,214,156,.12);display:grid;place-items:center;cursor:pointer;color:#4FE0AC" style-hover="background:rgba(47,214,156,.2)" style-active="transform:scale(.97)">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Icon" name="message-circle" size="{{ 28 }}" hint-size="28px,28px"></x-import>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:9px">
+<div style="font:700 12px/1.3 var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#EFEAE4">Talk to your coach</div>
+<div style="font:400 13px/1.4 var(--font-sans);color:#7B7570;text-wrap:pretty">Ask anything until the timer hits zero.</div>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="ghost" size="sm" on-click="{{ skipRest }}" hint-size="auto,32px">Skip rest</x-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isComplete }}">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="primary" size="lg" full-width="{{ true }}" icon-after="arrow-right" on-click="{{ goSummary }}" hint-size="100%,52px">See your session</x-import>
+</sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isAbort }}">
+<div data-screen-label="Safety abort" style="position:absolute;inset:0;background:#1A0E0B;display:flex;flex-direction:column;padding:84px 24px 30px;animation:cd-rise .22s cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;align-items:center;gap:9px;color:#FF6247">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Icon" name="triangle-alert" size="{{ 22 }}" hint-size="22px,22px"></x-import>
+<div style="font:700 12px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase">Safety ceiling</div>
+</div>
+<div style="font:700 50px/.98 var(--font-display);letter-spacing:-.035em;margin-top:20px">Stop.<br>Rack the bar.</div>
+<div style="font:400 17px/1.55 var(--font-sans);color:#FFAE9E;margin-top:16px;text-wrap:pretty">Your heart rate crossed 186 and held. Sit down, breathe through your nose, and let it come back under 120 before you move.</div>
+<div style="margin-top:26px;display:flex;gap:10px;flex:none">
+<div style="flex:1;padding:16px;border-radius:16px;background:rgba(255,98,71,.10);border:1px solid rgba(255,98,71,.28)">
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.14em;color:#FF8A73">CURRENT</div>
+<div style="font:700 40px/1 var(--font-numeric);letter-spacing:-.03em;margin-top:9px">{{ hrText }}</div>
+</div>
+<div style="flex:1;padding:16px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09)">
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.14em;color:#7B7570">CEILING</div>
+<div style="font:700 40px/1 var(--font-numeric);letter-spacing:-.03em;margin-top:9px;color:#A49E98">186</div>
+</div>
+</div>
+<div style="flex:1"></div>
+<div style="font:400 13px/1.5 var(--font-sans);color:#7B7570;margin-bottom:14px;text-wrap:pretty">Session ended and logged at set {{ setNumber }}. Nothing about this was adapted — an abort is not a coaching decision.</div>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="danger" size="lg" full-width="{{ true }}" on-click="{{ goSummary }}" hint-size="100%,52px">End session</x-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSummary }}">
+<div data-screen-label="Session summary" style="position:absolute;inset:0;background:#0C0B0A;overflow:auto;padding:62px 20px 30px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:center;flex:none">
+<div>
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:#7B7570">Session complete · {{ durationText }}</div>
+<div style="font:700 30px/1.05 var(--font-display);letter-spacing:-.02em;margin-top:7px">{{ movement }}</div>
+</div>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="ghost" size="sm" on-click="{{ reset }}" hint-size="auto,32px">Done</x-import>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:none">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.MetricTile" label="Volume" value="{{ volume }}" unit="kg" icon="dumbbell" color="var(--metric-strain)" style="{{ tileStyle }}" hint-size="33%,92px"></x-import>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.MetricTile" label="Avg HR" value="{{ avgHr }}" unit="bpm" icon="heart" color="var(--metric-cardio)" style="{{ tileStyle }}" hint-size="33%,92px"></x-import>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.MetricTile" label="Sets" value="{{ setsText }}" icon="target" color="var(--metric-recovery)" style="{{ tileStyle }}" hint-size="50%,92px"></x-import>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.MetricTile" label="Last recovery" value="{{ lastRecovery }}" unit="bpm" icon="trending-down" color="var(--metric-stress)" footnote="{{ lastRecoveryNote }}" style="{{ tileStyle }}" hint-size="50%,92px"></x-import>
+</div>
+
+<div style="flex:none">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Card" title="Recovery across rests" style="{{ blockMount }}" hint-size="100%,190px">
+<div style="font:400 13px/1.5 var(--font-sans);color:#A49E98;margin-bottom:14px;text-wrap:pretty">Beats dropped in the first 60 seconds of each rest. Dashed line is your 30-day average.</div>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.BarSeries" data="{{ chartData }}" labels="{{ chartLabels }}" baseline-value="{{ 22 }}" max="{{ 36 }}" color="var(--metric-recovery)" height="{{ 96 }}" hint-size="100%,110px"></x-import>
+</x-import>
+</div>
+
+<div style="flex:none">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.InsightCallout" title="{{ insightTitle }}" action-label="Open the log" on-action="{{ goLog }}" style="{{ blockMount }}" hint-size="100%,140px">{{ insightBody }}</x-import>
+</div>
+
+<div style="flex:none">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Card" title="Instrumentation" style="{{ blockMount }}" hint-size="100%,160px">
+<sc-for list="{{ telemetry }}" as="row" hint-placeholder-count="4">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.StatRow" label="{{ row.label }}" value="{{ row.value }}" hint-size="100%,44px"></x-import>
+</sc-for>
+</x-import>
+</div>
+<div style="height:6px"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLog }}">
+<div data-screen-label="Adaptation log" style="position:absolute;inset:0;background:#0C0B0A;overflow:auto;padding:62px 20px 30px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px;flex:none">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="ghost" size="sm" icon="chevron-left" on-click="{{ goSummary }}" hint-size="auto,32px">Back</x-import>
+</div>
+<div style="flex:none">
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:#7B7570">Adaptation log</div>
+<div style="font:400 14px/1.5 var(--font-sans);color:#A49E98;margin-top:9px;text-wrap:pretty">Every decision, its trigger, and whether you took it. The rule decides; the coach only reports it.</div>
+</div>
+<sc-for list="{{ logEntries }}" as="e" hint-placeholder-count="3">
+<div style="padding:16px;border-radius:16px;background:#1D1B1A;border:1px solid rgba(255,255,255,.07);border-left:3px solid {{ e.color }};display:flex;flex-direction:column;gap:9px;flex:none">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#7B7570">{{ e.time }} · Set {{ e.set }}</div>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Badge" tone="{{ e.tone }}" hint-size="auto,20px">{{ e.status }}</x-import>
+</div>
+<div style="font:700 17px/1.25 var(--font-display);letter-spacing:-.01em">{{ e.decision }}</div>
+<div style="font:400 13px/1.5 var(--font-sans);color:#A49E98;text-wrap:pretty">{{ e.trigger }}</div>
+</div>
+</sc-for>
+<div style="height:6px"></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showAdaptSheet }}">
+<div data-screen-label="Adaptation" style="position:absolute;left:0;right:0;bottom:0;top:0;background:linear-gradient(180deg,rgba(12,11,10,.3) 0%,rgba(12,11,10,.9) 42%);display:flex;flex-direction:column;justify-content:flex-end;padding:0 12px 12px">
+<div style="background:#232120;border:1px solid rgba(255,255,255,.10);border-radius:26px;padding:22px 20px 20px;display:flex;flex-direction:column;gap:14px;animation:cd-rise .24s cubic-bezier(.16,1,.3,1);box-shadow:0 -20px 60px rgba(0,0,0,.5)">
+<div style="display:flex;align-items:center;gap:9px">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Icon" name="{{ adaptIcon }}" size="{{ 18 }}" color="{{ adaptColor }}" hint-size="18px,18px"></x-import>
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:{{ adaptColor }}">{{ adaptEyebrow }}</div>
+</div>
+<div style="font:700 28px/1.1 var(--font-display);letter-spacing:-.025em;text-wrap:pretty">{{ adaptTitle }}</div>
+<div style="font:400 15px/1.55 var(--font-sans);color:#CFC8C1;text-wrap:pretty">{{ adaptBody }}</div>
+<div style="display:flex;gap:8px">
+<sc-for list="{{ adaptFacts }}" as="f" hint-placeholder-count="2">
+<div style="flex:1;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.14em;color:#7B7570">{{ f.label }}</div>
+<div style="font:700 20px/1 var(--font-numeric);letter-spacing:-.03em;margin-top:7px">{{ f.value }}</div>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ isAdapt }}">
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:2px">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="primary" size="lg" full-width="{{ true }}" on-click="{{ acceptCut }}" hint-size="100%,52px">Take the cut</x-import>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="outline" size="md" full-width="{{ true }}" icon="message-circle" on-click="{{ override }}" hint-size="100%,42px">“I feel fine, let me finish”</x-import>
+</div>
+</sc-if>
+<sc-if value="{{ isOverride }}">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="secondary" size="lg" full-width="{{ true }}" on-click="{{ resumeRest }}" hint-size="100%,52px">Back to the timer</x-import>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ talkOpen }}">
+<div data-screen-label="Talk to coach" style="position:absolute;inset:0;background:rgba(8,8,7,.72);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);display:flex;flex-direction:column;justify-content:flex-end;padding:0 12px 12px">
+<div style="background:#1D1B1A;border:1px solid rgba(255,255,255,.10);border-radius:26px;padding:20px;display:flex;flex-direction:column;gap:16px;animation:cd-rise .24s cubic-bezier(.16,1,.3,1)">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;align-items:center;gap:9px">
+<div style="width:8px;height:8px;border-radius:50%;background:#2FD69C;animation:cd-listen 1.4s ease-in-out infinite"></div>
+<div style="font:700 11px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:#EFEAE4">{{ talkStatus }}</div>
+</div>
+<div style="font:700 11px/1 var(--font-numeric);letter-spacing:.1em;color:#7B7570">{{ heroValue }} LEFT</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;min-height:150px">
+<div style="align-self:flex-end;max-width:82%;padding:12px 15px;border-radius:18px 18px 4px 18px;background:rgba(255,255,255,.09);font:400 15px/1.45 var(--font-sans);text-wrap:pretty">{{ talkQ }}</div>
+<sc-if value="{{ talkAnswered }}">
+<div style="align-self:flex-start;max-width:88%;padding:13px 16px;border-radius:18px 18px 18px 4px;background:rgba(47,214,156,.13);border:1px solid rgba(47,214,156,.22);font:400 15px/1.5 var(--font-sans);color:#DCFBEF;text-wrap:pretty">{{ talkA }}</div>
+</sc-if>
+<sc-if value="{{ talkThinking }}">
+<div style="align-self:flex-start;display:flex;gap:4px;padding:14px 16px">
+<div style="width:6px;height:6px;border-radius:50%;background:#2FD69C;animation:cd-listen 1s ease-in-out infinite"></div>
+<div style="width:6px;height:6px;border-radius:50%;background:#2FD69C;animation:cd-listen 1s ease-in-out .18s infinite"></div>
+<div style="width:6px;height:6px;border-radius:50%;background:#2FD69C;animation:cd-listen 1s ease-in-out .36s infinite"></div>
+</div>
+</sc-if>
+</div>
+<div style="display:flex;gap:8px">
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="secondary" size="md" full-width="{{ true }}" on-click="{{ askAgain }}" hint-size="100%,42px">Ask another</x-import>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="ghost" size="md" on-click="{{ closeTalk }}" hint-size="auto,42px">Close</x-import>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+
+<div style="flex:none;display:flex">
+<sc-if value="{{ rigOn }}">
+<aside style="width:270px;flex:none;display:flex;flex-direction:column;gap:16px;padding:20px;border-radius:18px;background:#1B1918;border:1px solid rgba(255,255,255,.08);position:sticky;top:34px">
+<div>
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.2em;text-transform:uppercase;color:#FFA818">Demo rig</div>
+<div style="font:400 12px/1.5 var(--font-sans);color:#7B7570;margin-top:7px;text-wrap:pretty">Not part of the product. Jump straight to any state, or let the session run.</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#57534F">Clock</div>
+<div style="display:flex;gap:6px">
+<sc-for list="{{ speeds }}" as="s" hint-placeholder-count="3">
+<div onClick="{{ s.set }}" style="flex:1;text-align:center;padding:9px 0;border-radius:99px;font:700 11px/1 var(--font-display);letter-spacing:.1em;cursor:pointer;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.fg }}">{{ s.label }}</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#57534F">Jump to state</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ jumps }}" as="j" hint-placeholder-count="8">
+<div onClick="{{ j.go }}" style="padding:8px 11px;border-radius:99px;font:600 11px/1 var(--font-sans);cursor:pointer;border:1px solid {{ j.border }};background:{{ j.bg }};color:{{ j.fg }}">{{ j.label }}</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font:700 10px/1 var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:#57534F">Trace</div>
+<x-import component-from-global-scope="CadenceDesignSystem_057172.Button" variant="outline" size="sm" full-width="{{ true }}" icon="triangle-alert" on-click="{{ spikeHr }}" hint-size="100%,32px">Breach the ceiling</x-import>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:7px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
+<sc-for list="{{ rigStats }}" as="r" hint-placeholder-count="5">
+<div style="display:flex;justify-content:space-between;gap:10px;font:500 11px/1.4 var(--font-sans)">
+<span style="color:#57534F">{{ r.label }}</span>
+<span style="color:#CFC8C1;font-family:var(--font-numeric);font-weight:700">{{ r.value }}</span>
+</div>
+</sc-for>
+</div>
+</aside>
+</sc-if>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:800,&quot;height&quot;:1000},&quot;demoSpeed&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;1×&quot;,&quot;4×&quot;,&quot;12×&quot;],&quot;default&quot;:&quot;4×&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo rig&quot;},&quot;showDemoRig&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Demo rig&quot;},&quot;hrSource&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Chest strap&quot;,&quot;Apple Watch&quot;,&quot;Replay trace&quot;],&quot;default&quot;:&quot;Replay trace&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Session&quot;},&quot;captions&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Session&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.fresh();
+  }
+
+  // ── model ────────────────────────────────────────────────
+  fresh() {
+    return {
+      phase: 'idle', setIdx: 0, restIdx: -1, reps: 0, target: 8, load: 60,
+      totalSets: 4, restExtra: 0, t: 0, clock: 0, running: false,
+      hr: 62, setStartHr: 96, restStartHr: 0, hrSum: 0, hrN: 0, peakHr: 62,
+      caption: 'Back squat. Four sets of eight at sixty kilos.',
+      speakUntil: 0, listenUntil: 0, nextRepAt: 4.5, lastRepT: 0,
+      deltas: [], fired: {}, log: [], rpe: null, speedOverride: 0,
+      talkOpen: false, talkIdx: 0, talkAt: 0, sessionT: 0, unlocks: 0,
+      overridden: false, cutTaken: false,
+    };
+  }
+
+  PEAK = [152, 158, 164, 166];
+  FLOOR = [108, 118, 126, 128];
+  TAU = [60, 120, 180, 180];
+  QA = [
+    ['Should I go heavier?', 'You had two left in the tank on set two. That is not a load problem yet. Next session, add two and a half kilos.'],
+    ['Why did you cut the set?', 'Your heart rate dropped eleven beats in the first minute of rest. Two rests in a row under target.'],
+    ['How many reps next set?', 'Eight, same as the last one. Load stays at sixty — the rest is what I changed.'],
+    ['How much rest is left?', 'Thirty-eight seconds. I will call you in at twenty.'],
+  ];
+
+  speed() { return this.state.speedOverride || ({ '1×': 1, '4×': 4, '12×': 12 }[this.props.demoSpeed] || 4); }
+  setHr(i, start, t) { const p = this.PEAK[i] ?? 160; return Math.round(start + (p - start) * Math.min(1, t / 28) + 1.4 * Math.sin(t * 1.1)); }
+  restHr(i, start, t) { const f = this.FLOOR[i] ?? 126, tau = this.TAU[i] ?? 120; return Math.round(f + (start - f) * Math.exp(-t / tau) + 1.1 * Math.sin(t * 0.7)); }
+  drop60(i, start) { const f = this.FLOOR[i] ?? 126, tau = this.TAU[i] ?? 120; return Math.round((start - f) * (1 - Math.exp(-60 / tau))); }
+  recoveryState(d) { return d >= 24 ? 'good' : d >= 18 ? 'ok' : 'poor'; }
+  mmss(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+  componentDidMount() { this._iv = setInterval(() => this.tick(), 100); }
+  componentWillUnmount() { clearInterval(this._iv); }
+
+  say(n, p, text, secs) { n.caption = text; n.speakUntil = (n.clock ?? p.clock) + secs; }
+
+  tick() {
+    this.setState(p => {
+      const dt = 0.1 * this.speed();
+      const n = { clock: p.clock + dt };
+      if (p.talkOpen) {
+        const age = n.clock - p.talkAt;
+        if (age > 1.6 && !p.fired['ans' + p.talkIdx]) n.fired = Object.assign({}, p.fired, { ['ans' + p.talkIdx]: 1 });
+      }
+      if (!p.running) return n;
+      n.sessionT = p.sessionT + dt;
+
+      if (p.phase === 'set') {
+        const t = p.t + dt;
+        n.t = t;
+        n.hr = this.setHr(p.setIdx, p.setStartHr, t);
+        n.hrSum = p.hrSum + n.hr * dt; n.hrN = p.hrN + dt;
+        n.peakHr = Math.max(p.peakHr, n.hr);
+        if (n.hr >= 186) { return Object.assign(n, { phase: 'abort', running: false, caption: 'Stop. Rack the bar and sit down.', speakUntil: n.clock + 3 }); }
+        const fired = Object.assign({}, p.fired);
+        if (!fired['go' + p.setIdx] && t > 0.4) {
+          fired['go' + p.setIdx] = 1;
+          this.say(n, p, p.load + ' kilos. ' + p.target + ' reps. Go.', 2.4);
+        }
+        if (p.reps < p.target && t >= p.nextRepAt) {
+          const r = p.reps + 1;
+          n.reps = r; n.nextRepAt = t + 4.5; n.lastRepT = t;
+          if (r > p.target - 3) this.say(n, p, ['six', 'seven', 'eight'][r - (p.target - 2)] || String(r), 1.1);
+        }
+        n.fired = fired;
+        if ((n.reps ?? p.reps) >= p.target && t > p.lastRepT + 1.6) return this.endSet(p, n);
+        return n;
+      }
+
+      if (p.phase === 'rest') {
+        const t = p.t + dt, len = 90 + p.restExtra;
+        n.t = t;
+        n.hr = this.restHr(p.restIdx, p.restStartHr, t);
+        n.hrSum = p.hrSum + n.hr * dt; n.hrN = p.hrN + dt;
+        const fired = Object.assign({}, p.fired);
+        const key = k => k + p.restIdx;
+        if (!fired[key('r0')] && t > 0.3) { fired[key('r0')] = 1; this.say(n, p, 'Ninety seconds. Breathe through your nose.', 2.6); }
+        if (p.restIdx === 1 && !fired[key('rpeQ')] && t > 8) { fired[key('rpeQ')] = 1; this.say(n, p, 'How many did you have left in the tank?', 2.4); n.listenUntil = n.clock + 5; }
+        if (p.restIdx === 1 && !fired[key('rpeA')] && t > 15) { fired[key('rpeA')] = 1; n.rpe = 2; this.say(n, p, 'Two left. Good — the load stays where it is.', 2.4); }
+        if (!fired[key('d')] && t >= 60) {
+          fired[key('d')] = 1;
+          const drop = this.drop60(p.restIdx, p.restStartHr);
+          const st = this.recoveryState(drop);
+          const deltas = p.deltas.concat([{ set: p.restIdx + 1, drop, state: st }]);
+          n.deltas = deltas;
+          const last2 = deltas.slice(-2);
+          const rulePoor = last2.length === 2 && last2.every(d => d.state === 'poor');
+          if (rulePoor && !p.cutTaken && !p.overridden && p.setIdx + 1 < p.totalSets) {
+            n.fired = fired;
+            this.say(n, p, 'Your heart rate is not coming down between sets. Two in a row. I am cutting set four — the volume is already in the bank.', 5.6);
+            return Object.assign(n, { phase: 'adapt' });
+          }
+        }
+        if (!fired[key('w')] && t >= len - 20) { fired[key('w')] = 1; this.say(n, p, 'Twenty seconds.', 1.2); }
+        n.fired = fired;
+        if (t >= len) return this.nextSet(p, n);
+        return n;
+      }
+
+      if (p.phase === 'override') {
+        n.t = p.t;
+        n.hr = this.restHr(p.restIdx, p.restStartHr, p.t);
+        return n;
+      }
+      return n;
+    });
+  }
+
+  endSet(p, n) {
+    const restIdx = p.setIdx;
+    return Object.assign(n, {
+      phase: 'rest', restIdx, t: 0, restStartHr: n.hr ?? p.hr,
+      caption: 'Set done. Rest ninety.', speakUntil: (n.clock ?? p.clock) + 2,
+      talkOpen: false,
+    });
+  }
+
+  nextSet(p, n) {
+    const next = p.setIdx + 1;
+    if (next >= p.totalSets) {
+      return Object.assign(n, { phase: 'complete', running: false, caption: 'That is the session. Four sets logged, one adapted.', speakUntil: (n.clock ?? p.clock) + 3 });
+    }
+    return Object.assign(n, {
+      phase: 'set', setIdx: next, reps: 0, t: 0, nextRepAt: 4.5, lastRepT: 0,
+      setStartHr: n.hr ?? p.hr, talkOpen: false,
+      caption: 'Bar is loaded. Go when ready.', speakUntil: (n.clock ?? p.clock) + 2,
+    });
+  }
+
+  // ── actions ──────────────────────────────────────────────
+  start = () => this.setState(p => ({ phase: 'set', running: true, setIdx: 0, reps: 0, t: 0, sessionT: 0, nextRepAt: 4.5, setStartHr: 96, caption: 'Back squat. Sixty kilos. Eight reps.', speakUntil: p.clock + 2.6 }));
+
+  logRep = () => this.setState(p => {
+    if (p.phase !== 'set' || p.reps >= p.target) return null;
+    const r = p.reps + 1;
+    const o = { reps: r, nextRepAt: p.t + 4.5, lastRepT: p.t };
+    if (r > p.target - 3) { o.caption = ['six', 'seven', 'eight'][r - (p.target - 2)] || String(r); o.speakUntil = p.clock + 1.1; }
+    return o;
+  });
+
+  skipRest = () => this.setState(p => this.nextSet(p, { clock: p.clock }));
+
+  acceptCut = () => this.setState(p => ({
+    phase: 'rest', totalSets: p.setIdx + 1, cutTaken: true,
+    caption: 'Cut it is. Rack the bar when the timer hits zero.', speakUntil: p.clock + 2.6,
+    log: p.log.concat([{ time: this.mmss(p.sessionT), set: p.setIdx + 1, decision: 'Set 4 cut', trigger: 'Recovery poor on two consecutive rests: −16 bpm, then −11 bpm against a 22 bpm baseline.', status: 'Accepted', tone: 'good', color: '#2FD69C' }]),
+  }));
+
+  override = () => this.setState(p => ({
+    phase: 'override', overridden: true, load: 50, restExtra: 30,
+    caption: 'Understood. Set four stays. Load drops to fifty and I am adding thirty seconds of rest.', speakUntil: p.clock + 5,
+    log: p.log.concat([
+      { time: this.mmss(p.sessionT), set: p.setIdx + 1, decision: 'Set 4 cut', trigger: 'Recovery poor on two consecutive rests: −16 bpm, then −11 bpm against a 22 bpm baseline.', status: 'Overridden', tone: 'caution', color: '#FFA818' },
+      { time: this.mmss(p.sessionT + 4), set: p.setIdx + 1, decision: 'Load 60 → 50 kg, rest +30 s', trigger: 'Athlete override accepted. Compensation applied so the set is completed under a lower load.', status: 'Compensated', tone: 'info', color: '#33A9FB' },
+    ]),
+  }));
+
+  resumeRest = () => this.setState({ phase: 'rest' });
+  spikeHr = () => this.setState(p => ({ phase: 'abort', running: false, hr: 191, caption: 'Stop. Rack the bar and sit down.', speakUntil: p.clock + 3 }));
+  goSummary = () => this.setState({ phase: 'summary', running: false, talkOpen: false });
+  goLog = () => this.setState({ phase: 'log' });
+  reset = () => this.setState(Object.assign(this.fresh(), { clock: this.state.clock }));
+
+  openTalk = () => this.setState(p => ({ talkOpen: true, talkAt: p.clock, listenUntil: p.clock + 1.4, unlocks: p.unlocks }));
+  closeTalk = () => this.setState({ talkOpen: false });
+  askAgain = () => this.setState(p => ({ talkIdx: (p.talkIdx + 1) % this.QA.length, talkAt: p.clock, listenUntil: p.clock + 1.4 }));
+
+  jump(name) {
+    const base = this.fresh();
+    const c = this.state.clock;
+    const mk = o => this.setState(Object.assign(base, { clock: c }, o));
+    const d1 = { set: 1, drop: 28, state: 'good' }, d2 = { set: 2, drop: 16, state: 'poor' }, d3 = { set: 3, drop: 11, state: 'poor' };
+    const cutLog = { time: '6:12', set: 3, decision: 'Set 4 cut', trigger: 'Recovery poor on two consecutive rests: −16 bpm, then −11 bpm against a 22 bpm baseline.', status: 'Accepted', tone: 'good', color: '#2FD69C' };
+    if (name === 'idle') return mk({});
+    if (name === 'set') return mk({ phase: 'set', running: true, setIdx: 1, reps: 5, t: 23, nextRepAt: 27, lastRepT: 23, hr: 151, setStartHr: 118, sessionT: 168, deltas: [d1], caption: 'five', speakUntil: c + 1.1 });
+    if (name === 'rest') return mk({ phase: 'rest', running: true, setIdx: 1, restIdx: 1, t: 34, hr: 145, restStartHr: 158, sessionT: 220, deltas: [d1], fired: { r01: 1 }, caption: 'How many did you have left in the tank?', speakUntil: c + 2.4, listenUntil: c + 5 });
+    if (name === 'adapt') return mk({ phase: 'adapt', running: true, setIdx: 2, restIdx: 2, t: 61, hr: 152, restStartHr: 164, sessionT: 372, deltas: [d1, d2, d3], caption: 'Your heart rate is not coming down between sets. Two in a row. I am cutting set four — the volume is already in the bank.', speakUntil: c + 5.6 });
+    if (name === 'override') return mk({ phase: 'override', running: true, setIdx: 2, restIdx: 2, t: 61, hr: 152, restStartHr: 164, sessionT: 376, deltas: [d1, d2, d3], overridden: true, load: 50, restExtra: 30, caption: 'Understood. Set four stays. Load drops to fifty and I am adding thirty seconds of rest.', speakUntil: c + 5, log: [{ time: '6:12', set: 3, decision: 'Set 4 cut', trigger: 'Recovery poor on two consecutive rests: −16 bpm, then −11 bpm.', status: 'Overridden', tone: 'caution', color: '#FFA818' }] });
+    if (name === 'abort') return mk({ phase: 'abort', setIdx: 2, hr: 191, sessionT: 358, deltas: [d1, d2] });
+    if (name === 'summary') return mk({ phase: 'summary', setIdx: 2, totalSets: 3, cutTaken: true, sessionT: 462, hr: 118, hrSum: 138 * 462, hrN: 462, deltas: [d1, d2, d3], log: [cutLog] });
+    if (name === 'log') return mk({ phase: 'log', setIdx: 2, totalSets: 3, cutTaken: true, sessionT: 462, hrSum: 138 * 462, hrN: 462, deltas: [d1, d2, d3], log: [cutLog] });
+  }
+
+  // ── view values ──────────────────────────────────────────
+  renderVals() {
+    const s = this.state, ph = s.phase;
+    const speaking = s.clock < s.speakUntil;
+    const listening = s.clock < s.listenUntil && !speaking;
+    const isRest = ph === 'rest', isSet = ph === 'set';
+    const restLen = 90 + s.restExtra;
+    const hr = s.hr;
+    const zone = hr < 100 ? 1 : hr < 130 ? 2 : hr < 150 ? 3 : hr < 172 ? 4 : 5;
+    const zoneTone = zone <= 2 ? 'info' : zone === 3 ? 'good' : zone === 4 ? 'caution' : 'poor';
+    const hrColor = zone <= 2 ? '#33A9FB' : zone === 3 ? '#2FD69C' : zone === 4 ? '#FFA818' : '#FF6247';
+    const zoneNames = ['', 'easy', 'aerobic', 'tempo', 'threshold', 'red line'];
+
+    const pips = Array.from({ length: 4 }, (_, i) => {
+      const cut = s.cutTaken && i >= s.totalSets;
+      let fill = 0;
+      if (i < s.setIdx) fill = 100;
+      else if (i === s.setIdx) fill = isSet ? (s.reps / s.target) * 100 : (ph === 'idle' ? 0 : 100);
+      return { fill: Math.round(fill), label: cut ? 'CUT' : 'SET ' + (i + 1) };
+    });
+
+    let heroValue = '', heroLabel = '', hasHero = false;
+    if (isSet) { heroValue = s.reps + '/' + s.target; heroLabel = 'reps logged · ' + s.load + ' kg'; hasHero = true; }
+    else if (isRest || ph === 'adapt' || ph === 'override') { heroValue = this.mmss(restLen - s.t); heroLabel = 'rest remaining'; hasHero = true; }
+    else if (ph === 'complete') { heroValue = this.mmss(s.sessionT); heroLabel = 'session complete'; hasHero = true; }
+
+    const deltas = s.deltas.map(d => ({
+      label: 'REST ' + d.set, value: '−' + d.drop,
+      state: d.state.toUpperCase(),
+      color: d.state === 'good' ? '#2FD69C' : d.state === 'ok' ? '#FFA818' : '#FF6247',
+    }));
+
+    const speeds = ['1×', '4×', '12×'].map(l => {
+      const v = { '1×': 1, '4×': 4, '12×': 12 }[l], on = this.speed() === v;
+      return { label: l, set: () => this.setState({ speedOverride: v }), bg: on ? 'rgba(47,214,156,.16)' : 'transparent', border: on ? 'rgba(47,214,156,.5)' : 'rgba(255,255,255,.12)', fg: on ? '#4FE0AC' : '#A49E98' };
+    });
+    const jumps = [['idle', 'Idle'], ['set', 'Set active'], ['rest', 'Rest + talk'], ['adapt', 'Adaptation'], ['override', 'Override'], ['abort', 'Safety abort'], ['summary', 'Summary'], ['log', 'Log']].map(([k, label]) => {
+      const on = ph === k;
+      return { label, go: () => this.jump(k), bg: on ? 'rgba(255,255,255,.12)' : 'transparent', border: on ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.10)', fg: on ? '#FCFAF7' : '#7B7570' };
+    });
+
+    const lastD = s.deltas[s.deltas.length - 1];
+    const rigStats = [
+      { label: 'Phase', value: ph.toUpperCase() },
+      { label: 'Heart rate', value: hr + ' bpm' },
+      { label: 'Recovery state', value: lastD ? lastD.state.toUpperCase() : '—' },
+      { label: 'Rule (poor ×2)', value: s.deltas.slice(-2).filter(d => d.state === 'poor').length + '/2' },
+      { label: 'Last RPE', value: s.rpe == null ? '—' : s.rpe + ' left' },
+      { label: 'Session clock', value: this.mmss(s.sessionT) },
+    ];
+
+    const setsDone = s.cutTaken ? s.totalSets : (ph === 'summary' ? Math.max(s.setIdx + 1, 3) : s.setIdx + (isSet ? 0 : 1));
+    const volume = (s.overridden ? 3 * 8 * 60 + 8 * 50 : setsDone * 8 * 60).toLocaleString();
+    const avgHr = s.hrN > 0 ? Math.round(s.hrSum / s.hrN) : 138;
+
+    const logEntries = s.log.length ? s.log : [{ time: this.mmss(s.sessionT), set: setsDone, decision: 'No adaptation fired', trigger: 'Recovery held above the 22 bpm baseline on every rest. The programme ran as written.', status: 'Clean', tone: 'neutral', color: '#3C3937' }];
+
+    return {
+      movement: 'Back squat',
+      planLine: s.cutTaken ? '3 × 8 · ' + s.load + ' kg · set 4 cut' : '4 × 8 · ' + s.load + ' kg · 90 s rest',
+      hrText: ph === 'idle' ? '62' : String(hr), hrColor, zoneTone,
+      zoneLabel: 'Zone ' + zone + ' · ' + zoneNames[zone],
+      pips, heroValue, heroLabel, hasHero,
+      caption: s.caption, speaking, listening, quiet: !speaking,
+      showCaption: this.props.captions !== false,
+      alarmed: ph === 'adapt' || ph === 'override', orbIdle: ph === 'idle' || ph === 'complete',
+      isIdle: ph === 'idle', isSet, isRest, isAdapt: ph === 'adapt', isOverride: ph === 'override',
+      isAbort: ph === 'abort', isSummary: ph === 'summary', isLog: ph === 'log', isComplete: ph === 'complete',
+      showSession: ['idle', 'set', 'rest', 'adapt', 'override', 'complete'].includes(ph),
+      showAdaptSheet: ph === 'adapt' || ph === 'override',
+      adaptEyebrow: ph === 'override' ? 'Override accepted' : 'Plan changed',
+      adaptIcon: ph === 'override' ? 'circle-check' : 'trending-down',
+      adaptColor: ph === 'override' ? '#33A9FB' : '#FFA818',
+      adaptTitle: ph === 'override' ? 'Set 4 stays. I moved the load instead.' : 'Cutting set 4.',
+      adaptBody: ph === 'override'
+        ? 'You said you feel fine, so the set is yours. Load drops to 50 kg and rest goes to two minutes — that keeps the set honest without asking your heart rate for something it is not giving.'
+        : 'Your heart rate dropped 11 beats in the first minute of this rest, and 16 in the last one. Two rests under the line in a row. You have the volume already.',
+      adaptFacts: ph === 'override'
+        ? [{ label: 'LOAD', value: '60 → 50 kg' }, { label: 'REST', value: '90 → 120 s' }]
+        : [{ label: 'THIS REST', value: '−11 bpm' }, { label: 'BASELINE', value: '−22 bpm' }],
+      sourceLine: (this.props.hrSource || 'Replay trace') + ' · connected · 62 bpm',
+      setNumber: s.setIdx + 1,
+      talkOpen: s.talkOpen,
+      talkStatus: s.clock - s.talkAt < 1.6 ? 'Listening' : 'Coach',
+      talkQ: this.QA[s.talkIdx][0], talkA: this.QA[s.talkIdx][1],
+      talkAnswered: s.clock - s.talkAt >= 1.6, talkThinking: s.clock - s.talkAt < 1.6,
+      volume, avgHr, durationText: this.mmss(s.sessionT || 462),
+      setsText: (s.cutTaken ? s.totalSets : setsDone) + ' of 4',
+      lastRecovery: lastD ? '−' + lastD.drop : '—',
+      lastRecoveryNote: lastD ? lastD.state + ' · baseline −22' : '',
+      chartData: (s.deltas.length ? s.deltas : [{ drop: 28 }, { drop: 16 }, { drop: 11 }]).map(d => d.drop),
+      chartLabels: (s.deltas.length ? s.deltas : [1, 2, 3]).map((_, i) => 'R' + (i + 1)),
+      insightTitle: s.overridden ? 'You took the last set on a lighter bar' : 'Fatigue arrived on set three',
+      insightBody: s.overridden
+        ? 'Recovery fell away after set two and did not come back. You finished the fourth set at 50 kg with two extra minutes of rest — a fair trade for the volume.'
+        : 'Recovery fell from 28 beats to 11 across three rests. Set four was cut, which is why this session is 462 seconds and not 620. Come back Thursday, not tomorrow.',
+      telemetry: [
+        { label: 'Screen unlocks', value: String(s.unlocks) },
+        { label: 'Cue latency, median', value: '180 ms' },
+        { label: 'Adaptations accepted', value: s.overridden ? '0 of 1' : '1 of 1' },
+        { label: 'Coach muted', value: 'never' },
+      ],
+      logEntries,
+      tileStyle: { flex: '1 1 0', minWidth: 0 },
+      blockMount: { flexShrink: 0 },
+      rigOn: this.props.showDemoRig !== false,
+      speeds, jumps, rigStats,
+      start: this.start, logRep: this.logRep, skipRest: this.skipRest,
+      acceptCut: this.acceptCut, override: this.override, resumeRest: this.resumeRest,
+      goSummary: this.goSummary, goLog: this.goLog, reset: this.reset, spikeHr: this.spikeHr,
+      openTalk: this.openTalk, closeTalk: this.closeTalk, askAgain: this.askAgain,
+    };
+  }
+}
+</script>
+</body>
+</html>

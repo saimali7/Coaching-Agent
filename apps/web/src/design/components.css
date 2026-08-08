@@ -1,0 +1,1050 @@
+/* ==========================================================================
+   Cadence component layer. Every class is prefixed `cad-`.
+   Presentational only — no layout assumptions beyond the phone screen.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Tone plumbing. Any element carrying data-tone gets --tone-300/400/500 plus
+   an rgb triple for alpha fills, so components never hard-code a hue.
+   -------------------------------------------------------------------------- */
+[data-tone="mint"] {
+  --tone-300: var(--mint-300);
+  --tone-400: var(--mint-400);
+  --tone-500: var(--mint-500);
+  --tone-rgb: 47, 214, 156;
+}
+
+[data-tone="amber"] {
+  --tone-300: var(--amber-300);
+  --tone-400: var(--amber-400);
+  --tone-500: var(--amber-500);
+  --tone-rgb: 255, 168, 24;
+}
+
+[data-tone="coral"] {
+  --tone-300: var(--coral-300);
+  --tone-400: var(--coral-400);
+  --tone-500: var(--coral-500);
+  --tone-rgb: 255, 98, 71;
+}
+
+[data-tone="sky"] {
+  --tone-300: var(--sky-300);
+  --tone-400: var(--sky-400);
+  --tone-500: var(--sky-500);
+  --tone-rgb: 51, 169, 251;
+}
+
+[data-tone="iris"] {
+  --tone-300: var(--iris-300);
+  --tone-400: var(--iris-400);
+  --tone-500: var(--iris-500);
+  --tone-rgb: 115, 118, 236;
+}
+
+[data-tone="neutral"] {
+  --tone-300: var(--text-secondary);
+  --tone-400: var(--text-tertiary);
+  --tone-500: var(--text-primary);
+  --tone-rgb: 255, 255, 255;
+}
+
+/* --------------------------------------------------------------------------
+   Screen utility — the scrolling column every phone screen sits in.
+   -------------------------------------------------------------------------- */
+.cad-screen {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--gutter-mobile);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.cad-screen::-webkit-scrollbar {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Icon — Lucide SVG painted as a CSS mask so it inherits currentColor.
+   -------------------------------------------------------------------------- */
+.cad-icon {
+  display: inline-block;
+  flex: none;
+  width: var(--icon-size, 20px);
+  height: var(--icon-size, 20px);
+  background-color: currentColor;
+  -webkit-mask-image: var(--icon-src);
+  mask-image: var(--icon-src);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+/* --------------------------------------------------------------------------
+   Button — pills, always. Uppercase Space Grotesk label at .14em.
+   -------------------------------------------------------------------------- */
+.cad-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-instant) var(--ease-standard),
+    opacity var(--dur-fast) var(--ease-standard);
+}
+
+.cad-btn:active:not(:disabled) {
+  transform: scale(var(--press-scale));
+}
+
+.cad-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  transform: none;
+}
+
+.cad-btn--block {
+  display: flex;
+  width: 100%;
+}
+
+/* sizes */
+.cad-btn--sm {
+  height: 32px;
+  padding: 0 var(--space-5);
+  font-size: var(--size-label-sm);
+}
+
+.cad-btn--md {
+  height: 44px;
+  padding: 0 var(--space-7);
+  font-size: var(--size-label);
+}
+
+.cad-btn--lg {
+  height: 52px;
+  padding: 0 var(--space-8);
+  font-size: var(--size-label);
+}
+
+/* variants */
+.cad-btn--primary {
+  background: var(--action-primary-bg);
+  color: var(--action-primary-fg);
+}
+
+.cad-btn--primary:hover:not(:disabled) {
+  background: var(--action-primary-bg-hover);
+}
+
+.cad-btn--secondary {
+  background: var(--action-secondary-bg);
+  color: var(--action-secondary-fg);
+}
+
+.cad-btn--secondary:hover:not(:disabled) {
+  background: var(--action-secondary-bg-hover);
+}
+
+.cad-btn--outline {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.cad-btn--outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cad-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.cad-btn--ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.cad-btn--danger {
+  background: var(--coral-500);
+  color: var(--ink-1000);
+}
+
+.cad-btn--danger:hover:not(:disabled) {
+  background: var(--coral-400);
+}
+
+.cad-btn__icon {
+  --icon-size: 16px;
+}
+
+.cad-btn--sm .cad-btn__icon {
+  --icon-size: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   Badge
+   -------------------------------------------------------------------------- */
+.cad-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  background: rgba(var(--tone-rgb), 0.14);
+  color: var(--tone-300);
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cad-badge[data-tone="neutral"] {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   Card
+   -------------------------------------------------------------------------- */
+.cad-card {
+  position: relative;
+  background: var(--surface-card);
+  border: var(--stroke-hairline) solid var(--border-hairline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.cad-card--pad-md {
+  padding: var(--card-pad);
+}
+
+.cad-card--pad-sm {
+  padding: var(--card-pad-sm);
+}
+
+.cad-card--rail {
+  border-left: 3px solid var(--tone-500);
+}
+
+.cad-card__title {
+  margin-bottom: var(--space-5);
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* --------------------------------------------------------------------------
+   MetricTile
+   -------------------------------------------------------------------------- */
+.cad-metric-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--card-pad-sm);
+  border: var(--stroke-hairline) solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.cad-metric-tile__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--tone-400);
+}
+
+.cad-metric-tile__label {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cad-metric-tile__body {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.cad-metric-tile__value {
+  font-family: var(--font-numeric);
+  font-size: var(--size-metric-md);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--tone-500);
+}
+
+.cad-metric-tile[data-tone="neutral"] .cad-metric-tile__value {
+  color: var(--text-primary);
+}
+
+.cad-metric-tile__unit {
+  font-family: var(--font-display);
+  font-size: var(--size-label);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  color: var(--text-tertiary);
+}
+
+.cad-metric-tile__footnote {
+  font-family: var(--font-sans);
+  font-size: var(--size-label-sm);
+  line-height: 1.4;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* --------------------------------------------------------------------------
+   BarSeries — bars, never lines. Every series carries a dashed baseline.
+   -------------------------------------------------------------------------- */
+.cad-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.cad-bars__plot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  height: var(--bars-height, 96px);
+}
+
+.cad-bars__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  height: 100%;
+  min-width: 0;
+}
+
+.cad-bars__value {
+  font-family: var(--font-numeric);
+  font-size: var(--size-label);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cad-bars__unit {
+  margin-left: 1px;
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cad-bars__bar {
+  width: 12px;
+  border-radius: var(--radius-pill) var(--radius-pill) 0 0;
+  background: var(--tone-500);
+  animation: cd-grow var(--dur-slow) var(--ease-out);
+}
+
+.cad-bars__baseline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px dashed rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+
+.cad-bars__baseline-label {
+  position: absolute;
+  right: 0;
+  bottom: 3px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cad-bars__labels {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.cad-bars__label {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* --------------------------------------------------------------------------
+   SetPips
+   -------------------------------------------------------------------------- */
+.cad-pips {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.cad-pips__col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.cad-pips__track {
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.cad-pips__fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--mint-500);
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+.cad-pips__label {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cad-pips__col--cut .cad-pips__track {
+  background: rgba(255, 98, 71, 0.22);
+}
+
+.cad-pips__col--cut .cad-pips__label {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.cad-pips__col--current .cad-pips__label {
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Orb — the voice presence. Ported from the prototype, insets scale with size.
+   -------------------------------------------------------------------------- */
+.cad-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--orb-size, 128px);
+  height: var(--orb-size, 128px);
+  --orb-inset-ring: calc(var(--orb-size, 128px) * 0.140625);
+  --orb-inset-listen: calc(var(--orb-size, 128px) * 0.0625);
+  --orb-core: calc(var(--orb-size, 128px) * 0.484375);
+}
+
+.cad-orb__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.cad-orb__ring-inner {
+  position: absolute;
+  inset: var(--orb-inset-ring);
+  border-radius: 50%;
+  border: 1px solid rgba(47, 214, 156, 0.22);
+}
+
+.cad-orb__emit {
+  position: absolute;
+  inset: var(--orb-inset-ring);
+  border-radius: 50%;
+  border: 1px solid rgba(47, 214, 156, 0.6);
+  animation: cd-emit 1.7s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.cad-orb__emit--delayed {
+  border-color: rgba(47, 214, 156, 0.45);
+  animation-delay: 0.85s;
+}
+
+.cad-orb__listen {
+  position: absolute;
+  inset: var(--orb-inset-listen);
+  border-radius: 50%;
+  border: 2px dashed rgba(47, 214, 156, 0.5);
+  animation: cd-listen 1.4s ease-in-out infinite;
+}
+
+.cad-orb__core {
+  position: relative;
+  width: var(--orb-core);
+  height: var(--orb-core);
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 36%, #b4f4dd 0%, #2fd69c 46%, #158a64 100%);
+  box-shadow: 0 0 44px rgba(47, 214, 156, 0.34);
+}
+
+.cad-orb__overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.cad-orb--speaking .cad-orb__overlay {
+  background: radial-gradient(circle at 42% 36%, #dcfbef 0%, #4fe0ac 50%, #1bb280 100%);
+  animation: cd-breathe 1.5s ease-in-out infinite;
+}
+
+.cad-orb--idle .cad-orb__core {
+  box-shadow: none;
+}
+
+.cad-orb--idle .cad-orb__overlay {
+  background: radial-gradient(circle at 42% 36%, #3c3937 0%, #232120 60%, #171615 100%);
+}
+
+.cad-orb--alarmed .cad-orb__core {
+  box-shadow: 0 0 44px rgba(255, 168, 24, 0.34);
+}
+
+.cad-orb--alarmed .cad-orb__overlay {
+  background: radial-gradient(circle at 42% 36%, #ffd37a 0%, #ffa818 48%, #d68500 100%);
+}
+
+/* --------------------------------------------------------------------------
+   CaptionCard
+   -------------------------------------------------------------------------- */
+.cad-caption {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px 16px;
+  min-height: 60px;
+  background: var(--surface-card);
+  border: var(--stroke-hairline) solid var(--border-hairline);
+  border-radius: var(--radius-card);
+}
+
+.cad-caption__lead {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 22px;
+  padding-top: 1px;
+}
+
+.cad-caption__wf {
+  width: 2.5px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--mint-500);
+  animation: cd-wf 0.62s ease-in-out infinite;
+}
+
+.cad-caption__wf:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.cad-caption__wf:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.cad-caption__wf:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.cad-caption__wf:nth-child(4) {
+  animation-delay: 0.07s;
+}
+
+.cad-caption__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-600);
+}
+
+.cad-caption__text {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-size: var(--size-body);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+  color: var(--ink-100);
+  text-wrap: pretty;
+}
+
+/* --------------------------------------------------------------------------
+   DeltaTile
+   -------------------------------------------------------------------------- */
+.cad-delta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: var(--stroke-hairline) solid var(--border-hairline);
+}
+
+.cad-delta__label {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cad-delta__row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.cad-delta__value {
+  font-family: var(--font-numeric);
+  font-size: 19px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cad-delta__state {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cad-delta__state--good {
+  color: var(--state-good);
+}
+
+.cad-delta__state--ok {
+  color: var(--state-caution);
+}
+
+.cad-delta__state--poor {
+  color: var(--state-poor);
+}
+
+.cad-delta__state--unknown {
+  color: var(--text-tertiary);
+}
+
+/* --------------------------------------------------------------------------
+   Sheet — absolutely positioned inside the phone screen, never the viewport.
+   -------------------------------------------------------------------------- */
+.cad-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 12px 12px;
+  background: linear-gradient(180deg, rgba(12, 11, 10, 0.3) 0%, rgba(12, 11, 10, 0.9) 42%);
+  animation: cd-fade var(--dur-base) var(--ease-out);
+}
+
+.cad-sheet__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 20px 20px;
+  background: var(--ink-800);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 26px;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.5);
+  animation: cd-rise 0.24s var(--ease-out);
+}
+
+.cad-sheet__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--tone-500);
+}
+
+.cad-sheet__eyebrow {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label-wide);
+  text-transform: uppercase;
+  color: var(--tone-500);
+}
+
+.cad-sheet__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+
+.cad-sheet__body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--size-body);
+  font-weight: var(--weight-regular);
+  line-height: 1.55;
+  color: var(--ink-200);
+  text-wrap: pretty;
+}
+
+.cad-sheet__facts {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.cad-sheet__fact {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cad-sheet__fact-label {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cad-sheet__fact-value {
+  margin-top: 7px;
+  font-family: var(--font-numeric);
+  font-size: var(--size-title-3);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cad-sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: 2px;
+}
+
+.cad-sheet__actions > * {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   StatRow
+   -------------------------------------------------------------------------- */
+.cad-statrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: 10px 0;
+  border-bottom: var(--stroke-hairline) solid var(--border-hairline);
+}
+
+.cad-statrow:last-child {
+  border-bottom: 0;
+}
+
+.cad-statrow__label {
+  font-family: var(--font-sans);
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+}
+
+.cad-statrow__value {
+  font-family: var(--font-numeric);
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-title);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   InsightCallout
+   -------------------------------------------------------------------------- */
+.cad-insight {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.cad-insight__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.cad-insight__icon {
+  color: var(--tone-400);
+  margin-top: 1px;
+}
+
+.cad-insight__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--size-body);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-title);
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+
+.cad-insight__body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--size-body-sm);
+  font-weight: var(--weight-regular);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.cad-insight__action {
+  display: flex;
+  margin-left: calc(var(--space-5) * -1);
+}
+
+/* --------------------------------------------------------------------------
+   IOSFrame
+   -------------------------------------------------------------------------- */
+.cad-ios {
+  position: relative;
+  flex: none;
+  width: 422px;
+  height: 894px;
+  padding: 10px;
+  border-radius: 64px;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 50px 90px -20px rgba(0, 0, 0, 0.8),
+    0 10px 30px -10px rgba(0, 0, 0, 0.6);
+}
+
+.cad-ios__screen {
+  position: relative;
+  width: 402px;
+  height: 874px;
+  border-radius: 54px;
+  overflow: hidden;
+  background: var(--surface-page);
+}
+
+.cad-ios__island {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 126px;
+  height: 37px;
+  border-radius: var(--radius-pill);
+  background: #000;
+  z-index: 50;
+}
+
+.cad-ios__status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: 59px;
+  padding-inline: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  pointer-events: none;
+}
+
+.cad-ios__time {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.cad-ios__status-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cad-ios__home {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.3);
+  z-index: 60;
+  pointer-events: none;
+}
+
+.cad-ios__content {
+  position: absolute;
+  inset: 0;
+  padding-top: 59px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   PhoneStage
+   -------------------------------------------------------------------------- */
+.cad-stage {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--surface-sunken);
+}
+
+.cad-stage__bloom {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 700px;
+  height: 700px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(47, 214, 156, 0.1) 0%, rgba(47, 214, 156, 0) 68%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cad-stage__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 34px;
+  padding: 34px var(--gutter-desktop) 64px;
+}
+
+.cad-stage__rig {
+  width: 270px;
+  flex: none;
+  position: sticky;
+  top: 34px;
+}
+
+@media (max-width: 1099px) {
+  .cad-stage {
+    min-height: 100dvh;
+  }
+
+  .cad-stage__bloom,
+  .cad-stage__rig {
+    display: none;
+  }
+
+  .cad-stage__inner {
+    gap: 0;
+    padding: 0;
+  }
+
+  .cad-stage .cad-ios {
+    width: 100%;
+    height: 100dvh;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--surface-page);
+  }
+
+  .cad-stage .cad-ios__screen {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+  }
+
+  .cad-stage .cad-ios__island,
+  .cad-stage .cad-ios__status,
+  .cad-stage .cad-ios__home {
+    display: none;
+  }
+
+  .cad-stage .cad-ios__content {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

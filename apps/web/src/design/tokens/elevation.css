@@ -1,0 +1,16 @@
+:root{
+/* On dark, elevation reads as a lighter surface + a hairline, not a drop shadow. */
+--shadow-none:none;
+--shadow-card:0 1px 0 rgba(255,255,255,.04) inset,0 8px 24px -12px rgba(0,0,0,.8);
+--shadow-raised:0 1px 0 rgba(255,255,255,.05) inset,0 18px 44px -18px rgba(0,0,0,.85);
+--shadow-sheet:0 -1px 0 rgba(255,255,255,.07) inset,0 -24px 64px -12px rgba(0,0,0,.9);
+--shadow-pressed:0 1px 3px rgba(0,0,0,.4) inset;
+--glow-mint:0 0 40px -6px rgba(47,214,156,.45);
+--glow-amber:0 0 40px -6px rgba(255,168,24,.4);
+--glow-iris:0 0 40px -6px rgba(115,118,236,.4);
+
+/* Protection gradients: legibility over imagery and over scrolling content. */
+--scrim-top:linear-gradient(to bottom,rgba(12,11,10,.92) 0%,rgba(12,11,10,0) 100%); /* @kind other */
+--scrim-bottom:linear-gradient(to top,rgba(12,11,10,.96) 0%,rgba(12,11,10,.72) 40%,rgba(12,11,10,0) 100%); /* @kind other */
+--blur-chrome:saturate(140%) blur(18px); /* @kind other */
+}

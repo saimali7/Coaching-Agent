@@ -1,0 +1,87 @@
+:root{
+/* --- Warm ink ramp: the base of every surface. Never pure black. --- */
+--ink-1000:#0C0B0A;--ink-950:#111010;--ink-900:#171615;--ink-850:#1D1B1A;--ink-800:#232120;
+--ink-700:#2E2B29;--ink-600:#3C3937;--ink-500:#57534F;--ink-400:#7B7570;--ink-300:#A49E98;
+--ink-200:#CFC8C1;--ink-150:#E2DCD5;--ink-100:#EFEAE4;--ink-050:#F7F4F0;--ink-000:#FCFAF7;
+
+/* --- Mint: the brand signal. Recovery, readiness, "you are good". --- */
+--mint-100:#DCFBEF;--mint-200:#B4F4DD;--mint-300:#82ECC6;--mint-400:#4FE0AC;--mint-500:#2FD69C;
+--mint-600:#1BB280;--mint-700:#158A64;--mint-800:#0F6249;
+
+/* --- Metric hues. One hue per domain, used for rings, bars and sparklines. --- */
+--amber-300:#FFD37A;--amber-400:#FFBE47;--amber-500:#FFA818;--amber-600:#D68500;
+--iris-300:#B9BAF7;--iris-400:#9295F2;--iris-500:#7376EC;--iris-600:#5457C9;
+--coral-300:#FFAE9E;--coral-400:#FF8A73;--coral-500:#FF6247;--coral-600:#DB4429;
+--sky-300:#9FD9FF;--sky-400:#66C2FF;--sky-500:#33A9FB;--sky-600:#1685D2;
+
+/* --- Semantic surfaces (dark is the product default) --- */
+--surface-page:var(--ink-1000);
+--surface-raised:var(--ink-900);
+--surface-card:var(--ink-850);
+--surface-card-hover:var(--ink-800);
+--surface-sunken:#080807;
+--surface-inverse:var(--ink-000);
+--surface-scrim:rgba(8,8,7,.72);
+
+/* --- Semantic text --- */
+--text-primary:var(--ink-000);
+--text-secondary:var(--ink-300);
+--text-tertiary:var(--ink-400);
+--text-disabled:var(--ink-500);
+--text-accent:var(--mint-400);
+--text-inverse:var(--ink-1000);
+--text-link:var(--mint-400);
+--text-link-hover:var(--mint-300);
+
+/* --- Semantic lines --- */
+--border-hairline:rgba(255,255,255,.07);
+--border-subtle:rgba(255,255,255,.12);
+--border-strong:rgba(255,255,255,.22);
+--border-accent:var(--mint-500);
+
+/* --- Semantic status --- */
+--state-good:var(--mint-500);
+--state-caution:var(--amber-500);
+--state-poor:var(--coral-500);
+--state-info:var(--sky-500);
+
+/* --- Metric domains --- */
+--metric-recovery:var(--mint-500);
+--metric-strain:var(--amber-500);
+--metric-sleep:var(--iris-500);
+--metric-stress:var(--coral-500);
+--metric-cardio:var(--sky-500);
+
+/* --- Interactive --- */
+--action-primary-bg:var(--mint-500);
+--action-primary-fg:var(--ink-1000);
+--action-primary-bg-hover:var(--mint-400);
+--action-secondary-bg:rgba(255,255,255,.08);
+--action-secondary-fg:var(--ink-000);
+--action-secondary-bg-hover:rgba(255,255,255,.14);
+--focus-ring:var(--mint-400);
+}
+
+/* Light surface. Used by marketing pages and printed material only. */
+[data-theme="light"]{
+--surface-page:var(--ink-000);
+--surface-raised:var(--ink-050);
+--surface-card:#FFFFFF;
+--surface-card-hover:var(--ink-050);
+--surface-sunken:var(--ink-100);
+--surface-inverse:var(--ink-1000);
+--surface-scrim:rgba(12,11,10,.55);
+--text-primary:var(--ink-1000);
+--text-secondary:var(--ink-500);
+--text-tertiary:var(--ink-400);
+--text-disabled:var(--ink-300);
+--text-accent:var(--mint-700);
+--text-inverse:var(--ink-000);
+--text-link:var(--mint-700);
+--text-link-hover:var(--mint-800);
+--border-hairline:rgba(12,11,10,.08);
+--border-subtle:rgba(12,11,10,.14);
+--border-strong:rgba(12,11,10,.28);
+--action-secondary-bg:rgba(12,11,10,.06);
+--action-secondary-bg-hover:rgba(12,11,10,.11);
+}

@@ -1,0 +1,25 @@
+:root{
+--font-display:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+--font-sans:"Manrope",ui-sans-serif,system-ui,sans-serif;
+--font-numeric:"Space Grotesk",ui-monospace,monospace;
+
+--weight-light:300;--weight-regular:400;--weight-medium:500;--weight-semibold:600;--weight-bold:700;--weight-extrabold:800;
+
+/* Sizes. Display sizes are Space Grotesk; text sizes are Manrope. */
+--size-display-1:76px;--size-display-2:56px;--size-display-3:40px;
+--size-title-1:32px;--size-title-2:24px;--size-title-3:20px;
+--size-body-lg:17px;--size-body:15px;--size-body-sm:13px;
+--size-label:12px;--size-label-sm:11px;
+--size-metric-xl:88px;--size-metric-lg:56px;--size-metric-md:34px;--size-metric-sm:22px;
+
+--leading-tight:.94;--leading-snug:1.12;--leading-normal:1.5;--leading-relaxed:1.62;
+
+--tracking-display:-.03em;--tracking-title:-.02em;--tracking-body:0em;
+--tracking-label:.14em;--tracking-label-wide:.2em;
+
+/* Composed roles */
+--text-display:var(--weight-bold) var(--size-display-2)/var(--leading-tight) var(--font-display);
+--text-title:var(--weight-semibold) var(--size-title-2)/var(--leading-snug) var(--font-display);
+--text-body-role:var(--weight-regular) var(--size-body)/var(--leading-relaxed) var(--font-sans);
+--text-metric:var(--weight-bold) var(--size-metric-lg)/var(--leading-tight) var(--font-numeric);
+}
