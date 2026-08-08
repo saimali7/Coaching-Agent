@@ -137,7 +137,9 @@ const body = {
         },
       },
     },
-    tts: { voice_id: voiceId, model_id: 'eleven_flash_v2_5' },
+    // English agents must use turbo or flash v2 — the _v2_5 multilingual models
+    // are rejected by the API when language is 'en'. flash_v2 is the low-latency one.
+    tts: { voice_id: voiceId, model_id: 'eleven_flash_v2' },
     asr: { keywords: ['squat', 'reps', 'rack', 'tank', 'heavier'] },
     conversation: { max_duration_seconds: 600, text_only: false },
   },
