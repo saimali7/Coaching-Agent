@@ -195,27 +195,21 @@ export function LiveSession() {
 
       {phase === 'rest' && (
         <div className="ls-rest-actions">
-          <button
-            className={`ls-talk is-${agent.talkState}`}
-            onClick={agent.talkState === 'idle' ? agent.startTalk : agent.stopTalk}
-            disabled={!agent.canTalk}
-            type="button"
-            aria-label={agent.connected ? 'End talking to your coach' : 'Talk to your coach'}
-          >
-            <Icon name="message-circle" size={28} />
-          </button>
+          <PushToTalk agent={agent} />
           <div className="ls-rest-copy">
             <div className="ls-rest-title">
               {agent.talkState === 'unavailable'
                 ? 'Coach offline'
-                : agent.connected
+                : agent.holding
                   ? 'Listening'
-                  : 'Talk to your coach'}
+                  : agent.talkState === 'speaking'
+                    ? 'Coach replying'
+                    : 'Hold to talk'}
             </div>
             <div className="ls-rest-sub">
               {agent.talkState === 'unavailable'
                 ? 'Voice agent is not configured — Tier 0 cues carry the session.'
-                : 'Ask anything until the timer hits zero.'}
+                : 'Hold the button, speak, let go. Space bar works too.'}
             </div>
             <div className="ls-rest-row">
               <Button variant="ghost" size="sm" onClick={s.skipRest}>
@@ -244,15 +238,28 @@ export function LiveSession() {
         </div>
       )}
 
-      <button
-        className="ls-mute"
-        type="button"
-        onClick={s.toggleMute}
-        aria-label={muted ? 'Unmute coach' : 'Mute coach'}
-      >
-        <Icon name={muted ? 'circle-alert' : 'zap'} size={14} />
-        {muted ? 'Coach muted' : 'Coach on'}
-      </button>
+      <div className="ls-chips">
+        <button
+          className="ls-mute"
+          type="button"
+          onClick={s.toggleMute}
+          aria-label={muted ? 'Unmute coach' : 'Mute coach'}
+        >
+          <Icon name={muted ? 'circle-alert' : 'zap'} size={14} />
+          {muted ? 'Coach muted' : 'Coach on'}
+        </button>
+
+        {/* The rig can lift the rest-window gate; when it does, the mic has to
+            be reachable from every phase, not just the rest layout. */}
+        {agent.micAlwaysOn && phase !== 'rest' && agent.canTalk && (
+          <div className="ls-ptt">
+            <PushToTalk agent={agent} compact />
+            <span className="ls-ptt-label">
+              {agent.holding ? 'Listening' : 'Hold to talk'}
+            </span>
+          </div>
+        )}
+      </div>
 
       <Sheet
         open={pendingAdaptation !== null}
@@ -292,6 +299,78 @@ export function LiveSession() {
         }
       />
     </div>
+  );
+}
+
+type Agent = ReturnType<typeof useCoachAgent>;
+
+/**
+ * Hold to speak, release to send. A press-and-hold is the honest gesture here:
+ * the athlete knows exactly when the coach is listening, and the agent cannot
+ * pick up the gym — or the audience — between turns.
+ */
+function PushToTalk({ agent, compact = false }: { agent: Agent; compact?: boolean }) {
+  const { canTalk, holding, holdStart, holdEnd, talkState } = agent;
+
+  // Space and Enter hold too, so the control is not mouse-only. Key repeat
+  // fires held keydown events, hence the `holding` guard.
+  useEffect(() => {
+    if (!canTalk) return;
+    const isHoldKey = (e: KeyboardEvent) => e.code === 'Space' || e.code === 'Enter';
+    const target = (e: KeyboardEvent) => e.target as HTMLElement | null;
+    const typing = (e: KeyboardEvent) => {
+      const t = target(e);
+      return t !== null && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    };
+    const down = (e: KeyboardEvent) => {
+      if (!isHoldKey(e) || e.repeat || typing(e)) return;
+      e.preventDefault();
+      void holdStart();
+    };
+    const up = (e: KeyboardEvent) => {
+      if (!isHoldKey(e) || typing(e)) return;
+      e.preventDefault();
+      holdEnd();
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+    };
+  }, [canTalk, holdStart, holdEnd]);
+
+  // A pointer released outside the button, or a lost window focus, must still
+  // close the mic — otherwise it stays open with nobody watching.
+  useEffect(() => {
+    if (!holding) return;
+    const release = () => holdEnd();
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    window.addEventListener('blur', release);
+    return () => {
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+      window.removeEventListener('blur', release);
+    };
+  }, [holding, holdEnd]);
+
+  const state = holding ? 'holding' : talkState;
+
+  return (
+    <button
+      className={`ls-talk is-${state}${compact ? ' is-compact' : ''}`}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        void holdStart();
+      }}
+      disabled={!canTalk}
+      type="button"
+      aria-pressed={holding}
+      aria-label={holding ? 'Release to send' : 'Hold to talk to your coach'}
+    >
+      <Icon name="message-circle" size={compact ? 18 : 28} />
+    </button>
   );
 }
 

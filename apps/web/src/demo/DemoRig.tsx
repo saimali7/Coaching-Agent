@@ -83,6 +83,24 @@ export function DemoRig() {
       </div>
 
       <div className="rig-group">
+        <div className="rig-label">Microphone</div>
+        <button
+          type="button"
+          className={s.micAlwaysOn ? 'rig-toggle is-on' : 'rig-toggle'}
+          onClick={s.toggleMicAlwaysOn}
+          aria-pressed={s.micAlwaysOn}
+        >
+          <span className="rig-toggle-dot" />
+          {s.micAlwaysOn ? 'Open in every phase' : 'Rest window only'}
+        </button>
+        <p className="rig-lede">
+          {s.micAlwaysOn
+            ? 'Off-spec: the product keeps the agent out of a working set so it can never talk over a rep.'
+            : 'Hold the button to speak. Space bar works too.'}
+        </p>
+      </div>
+
+      <div className="rig-group">
         <div className="rig-label">Trace</div>
         <Button variant="outline" size="sm" block icon="triangle-alert" onClick={s.breachCeiling}>
           Breach the ceiling

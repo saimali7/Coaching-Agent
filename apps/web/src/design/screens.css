@@ -1224,3 +1224,103 @@
   color: var(--text-disabled);
   cursor: not-allowed;
 }
+
+/* --------------------------------------------------------------------------
+   Push to talk. Holding is the gesture, so the button reads as pressed while
+   the mic is open and never as a toggle that might have been left on.
+   -------------------------------------------------------------------------- */
+.ls-talk.is-holding {
+  background: var(--mint-500);
+  border-color: var(--mint-400);
+  color: var(--ink-1000);
+  transform: scale(1.04);
+  box-shadow: 0 0 32px -4px rgba(47, 214, 156, 0.55);
+}
+
+.ls-talk.is-compact {
+  width: 34px;
+  height: 34px;
+  border-width: 1px;
+}
+
+.ls-talk.is-compact.is-holding {
+  transform: scale(1.06);
+}
+
+.ls-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  flex: none;
+}
+
+.ls-ptt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.ls-ptt-label {
+  font-family: var(--font-display);
+  font-size: var(--size-label-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* Demo rig — microphone mode toggle. */
+.rig-toggle {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  margin: 0;
+  padding: 9px var(--space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--size-label);
+  font-weight: var(--weight-semibold);
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.rig-toggle:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.rig-toggle:active {
+  transform: scale(var(--press-scale));
+}
+
+.rig-toggle-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ink-600);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.rig-toggle.is-on {
+  border-color: var(--border-accent);
+  background: rgba(47, 214, 156, 0.12);
+  color: var(--mint-300);
+}
+
+.rig-toggle.is-on .rig-toggle-dot {
+  background: var(--mint-400);
+}

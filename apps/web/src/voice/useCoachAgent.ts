@@ -15,8 +15,13 @@ export type TalkState = 'unavailable' | 'idle' | 'connecting' | 'listening' | 's
 export function useCoachAgent() {
   const phase = useSessionStore((s) => s.phase);
   const pendingAdaptation = useSessionStore((s) => s.pendingAdaptation);
+  const micAlwaysOn = useSessionStore((s) => s.micAlwaysOn);
   const [agentLine, setAgentLine] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  // Push to talk: the socket stays open between turns and the microphone is
+  // what opens and closes. Reconnecting per press would cost a second of
+  // handshake every time and lose the conversation's memory of the last turn.
+  const [holding, setHolding] = useState(false);
 
   const voiceStatus = useQuery({
     queryKey: ['voice-status'],
@@ -95,6 +100,7 @@ export function useCoachAgent() {
         if (c.status === 'connected') c.sendContextualUpdate(toContextualUpdate(ctx));
       },
       onRestExit: () => {
+        if (useSessionStore.getState().micAlwaysOn) return;
         const c = conversationRef.current;
         if (c.status === 'connected' || c.status === 'connecting') c.endSession();
       },
@@ -103,15 +109,18 @@ export function useCoachAgent() {
   }, []);
 
   // Defensive hard gate (#32): whatever moved the machine out of REST —
-  // demo jumps included — the agent is cut off.
+  // demo jumps included — the agent is cut off. The rig can lift this for
+  // free-form conversation, which is a demo affordance, not the product.
   useEffect(() => {
+    if (micAlwaysOn) return;
     const c = conversationRef.current;
     if (phase !== 'rest' && (c.status === 'connected' || connecting)) {
       c.endSession();
       setConnecting(false);
+      setHolding(false);
       useSessionStore.getState().track('agent_gate_blocked', { phase });
     }
-  }, [phase, connecting]);
+  }, [phase, connecting, micAlwaysOn]);
 
   // The sheet resolving mid-conversation changes the truth — refresh the context.
   useEffect(() => {
@@ -121,34 +130,71 @@ export function useCoachAgent() {
     }
   }, [pendingAdaptation]);
 
-  const startTalk = useCallback(async () => {
-    const s = useSessionStore.getState();
-    if (s.phase !== 'rest') {
-      s.track('agent_gate_blocked', { phase: s.phase, reason: 'start_outside_rest' });
-      return;
-    }
-    if (conversationRef.current.status === 'connected' || connecting) return;
+  /** Open the socket if needed. The mic starts muted — holding is what opens it. */
+  const connect = useCallback(async (): Promise<boolean> => {
+    const c = conversationRef.current;
+    if (c.status === 'connected') return true;
+    if (connecting) return false;
     setConnecting(true);
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       const res = await fetch('/api/voice/signed-url');
       if (!res.ok) throw new Error('signed url unavailable');
       const { signedUrl } = (await res.json()) as { signedUrl: string };
-      conversationRef.current.startSession({
+      c.startSession({
         signedUrl,
         connectionType: 'websocket',
         dynamicVariables: toDynamicVariables(buildCoachContext(useSessionStore.getState())),
       });
+      return true;
     } catch {
       setConnecting(false);
       useSessionStore.getState().track('agent_disconnect', { error: 'start_failed' });
+      return false;
     }
   }, [connecting]);
+
+  const startTalk = useCallback(async () => {
+    const s = useSessionStore.getState();
+    if (s.phase !== 'rest' && !s.micAlwaysOn) {
+      s.track('agent_gate_blocked', { phase: s.phase, reason: 'start_outside_rest' });
+      return;
+    }
+    await connect();
+  }, [connect]);
 
   const stopTalk = useCallback(() => {
     conversationRef.current.endSession();
     setConnecting(false);
+    setHolding(false);
   }, []);
+
+  // --- push to talk ---------------------------------------------------------
+  const holdStart = useCallback(async () => {
+    const s = useSessionStore.getState();
+    if (s.phase !== 'rest' && !s.micAlwaysOn) {
+      s.track('agent_gate_blocked', { phase: s.phase, reason: 'hold_outside_rest' });
+      return;
+    }
+    setHolding(true);
+    const ready = await connect();
+    if (!ready && conversationRef.current.status !== 'connected') return;
+    conversationRef.current.setMuted(false);
+  }, [connect]);
+
+  const holdEnd = useCallback(() => {
+    setHolding(false);
+    // Closing the mic is what ends the turn; the socket stays open so the
+    // agent can answer and remember the exchange.
+    if (conversationRef.current.status === 'connected') conversationRef.current.setMuted(true);
+  }, []);
+
+  // The mic must be shut the instant a connection lands while nothing is held,
+  // otherwise the first press leaves it open and the agent hears the whole room.
+  useEffect(() => {
+    if (conversation.status !== 'connected') return;
+    conversation.setMuted(!holding);
+  }, [conversation, conversation.status, holding]);
 
   const configured = voiceStatus.data?.configured ?? false;
   const talkState: TalkState = !configured
@@ -163,7 +209,11 @@ export function useCoachAgent() {
 
   return {
     talkState,
-    canTalk: phase === 'rest' && configured,
+    canTalk: (phase === 'rest' || micAlwaysOn) && configured,
+    micAlwaysOn,
+    holding,
+    holdStart,
+    holdEnd,
     startTalk,
     stopTalk,
     agentLine,

@@ -86,6 +86,12 @@ export type SessionState = {
   telemetry: TelemetryEvent[];
   muted: boolean;
   agentActive: boolean;
+  /**
+   * Presenter escape hatch. The product rule is that the mic opens only in REST
+   * (#31, #32) so the agent can never speak into a working set — this lifts that
+   * gate for free-form conversation during a demo. Off by default.
+   */
+  micAlwaysOn: boolean;
   aborted: { reason: string; hrAtAbort: number } | null;
 };
 
@@ -117,6 +123,7 @@ export type SessionActions = {
   breachCeiling: () => void;
   dropStrap: () => void;
   toggleMute: () => void;
+  toggleMicAlwaysOn: () => void;
   setSpeed: (s: DemoSpeed) => void;
   setAgentActive: (b: boolean) => void;
   track: (type: TelemetryType, data?: Record<string, unknown>) => void;
@@ -526,6 +533,12 @@ export const useSessionStore = create<SessionStore>()((set, get) => ({
     const muted = !get().muted;
     set({ muted });
     get().track('mute_change', { muted });
+  },
+
+  toggleMicAlwaysOn: () => {
+    const micAlwaysOn = !get().micAlwaysOn;
+    set({ micAlwaysOn });
+    get().track('mic_mode_change', { micAlwaysOn });
   },
 
   setSpeed: (s) => {
